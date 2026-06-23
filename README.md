@@ -66,6 +66,24 @@ idf.py -p /dev/cu.usbmodem101 flash
 ./scripts/build.sh all
 ```
 
+After code changes or build checks, run the development verification workflow:
+
+```bash
+./scripts/dev-verify.sh
+```
+
+To include the ESP32 firmware build:
+
+```bash
+./scripts/dev-verify.sh --esp32
+```
+
+This workflow runs tests, exports `build-sim/calendar-render.png`, runs the
+structural render check, and then requires visual inspection with the
+`$rlcd-render-check` workflow. If the PNG has layout, font, clipping, overlap,
+or blank-region problems, fix the UI and rerun the workflow until the latest
+render is visually normal. See `docs/workflows/render-qa-loop.md`.
+
 ## Desktop LVGL simulator
 
 The calendar UI is structured so the LVGL screen can run on a desktop SDL2
@@ -131,7 +149,7 @@ the ST7305 monochrome RLCD buffer used by the Waveshare board. ESP32-specific
 Wi-Fi, NTP, weather HTTP, RTC, and sensor code should feed the same model
 through `src/platform/esp32/`.
 
-The UI uses a generated 18px, 1bpp Simplified Chinese subset font at
+The UI uses a generated 16px, 1bpp Simplified Chinese subset font at
 `src/app/calendar_font_zh.*`. The generator reads the current UI string literals,
 renders only the required non-ASCII glyphs from macOS
 `/System/Library/Fonts/Hiragino Sans GB.ttc`, and leaves ASCII/digits to the
@@ -187,4 +205,9 @@ For hardware render debugging, enable `CALENDAR_DUMP_RLCD_FRAME` in
 `idf.py menuconfig` under `ESP32 Calendar`. The first LVGL flush will log
 `CALENDAR_RLCD_FRAME_BEGIN`, `CALENDAR_RLCD_FRAME_HEX`, and
 `CALENDAR_RLCD_FRAME_END` records containing the final ST7305 1bpp frame buffer
-sent to the panel.
+sent to the panel. Convert a captured serial log to PNG with:
+
+```bash
+python3 scripts/rlcd-log-to-png.py serial.log build-sim/rlcd-frame.png
+python3 scripts/check-render-png.py build-sim/rlcd-frame.png
+```

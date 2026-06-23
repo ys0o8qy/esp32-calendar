@@ -19,8 +19,8 @@ SOURCE_PATHS = [
 ]
 OUTPUT_C = ROOT / "src/app/calendar_font_zh.c"
 OUTPUT_H = ROOT / "src/app/calendar_font_zh.h"
-FONT_SIZE = 18
-FONT_LINE_HEIGHT = 22
+FONT_SIZE = 16
+FONT_LINE_HEIGHT = 19
 FONT_BASELINE = 0
 
 
@@ -126,11 +126,11 @@ def render_char(char: str, tmpdir: Path) -> tuple[int, int, list[int]]:
         check=True,
     )
     width, height, gray = parse_png_grayscale(output)
-    bitmap = [1 if value < 248 else 0 for value in gray]
-    return crop_and_embolden(width, height, bitmap)
+    bitmap = [1 if value < 220 else 0 for value in gray]
+    return crop_bitmap(width, height, bitmap)
 
 
-def crop_and_embolden(width: int, height: int, bitmap: list[int]) -> tuple[int, int, list[int]]:
+def crop_bitmap(width: int, height: int, bitmap: list[int]) -> tuple[int, int, list[int]]:
     points = [(x, y) for y in range(height) for x in range(width) if bitmap[y * width + x]]
     if not points:
         return 0, 0, []
@@ -147,8 +147,6 @@ def crop_and_embolden(width: int, height: int, bitmap: list[int]) -> tuple[int, 
                 cx = x - min_x
                 cy = y - min_y
                 cropped[cy * cropped_w + cx] = 1
-                if cx + 1 < cropped_w:
-                    cropped[cy * cropped_w + cx + 1] = 1
     return cropped_w, cropped_h, cropped
 
 
@@ -197,7 +195,7 @@ def write_outputs(chars: list[str], glyphs: list[dict[str, object]]) -> None:
 
 #include "lvgl.h"
 
-LV_FONT_DECLARE(calendar_font_zh_18);
+LV_FONT_DECLARE(calendar_font_zh_16);
 """,
         encoding="utf-8",
     )
@@ -287,7 +285,7 @@ static const uint8_t *calendar_font_zh_get_glyph_bitmap(const lv_font_t *font, u
     return &calendar_font_zh_bitmap[glyph->bitmap_index];
 }}
 
-const lv_font_t calendar_font_zh_18 = {{
+const lv_font_t calendar_font_zh_16 = {{
     .get_glyph_dsc = calendar_font_zh_get_glyph_dsc,
     .get_glyph_bitmap = calendar_font_zh_get_glyph_bitmap,
     .line_height = {FONT_LINE_HEIGHT},
@@ -296,7 +294,7 @@ const lv_font_t calendar_font_zh_18 = {{
     .underline_position = -2,
     .underline_thickness = 1,
     .dsc = NULL,
-    .fallback = &lv_font_montserrat_20,
+    .fallback = &lv_font_montserrat_16,
 }};
 """,
         encoding="utf-8",

@@ -7,7 +7,7 @@ void calendar_theme_init(calendar_theme_t *theme)
     lv_style_init(&theme->screen);
     lv_style_set_bg_color(&theme->screen, lv_color_hex(0xffffff));
     lv_style_set_text_color(&theme->screen, lv_color_hex(0x171717));
-    lv_style_set_text_font(&theme->screen, &calendar_font_zh_18);
+    lv_style_set_text_font(&theme->screen, &calendar_font_zh_16);
     lv_style_set_pad_all(&theme->screen, 8);
 
     lv_style_init(&theme->panel);
@@ -31,8 +31,8 @@ void calendar_theme_init(calendar_theme_t *theme)
     lv_style_set_bg_color(&theme->today, lv_color_hex(0x171717));
     lv_style_set_text_color(&theme->today, lv_color_hex(0xffffff));
     lv_style_set_radius(&theme->today, 3);
-    lv_style_set_pad_hor(&theme->today, 4);
-    lv_style_set_pad_ver(&theme->today, 2);
+    lv_style_set_pad_hor(&theme->today, 2);
+    lv_style_set_pad_ver(&theme->today, 0);
 }
 
 void calendar_theme_reset(calendar_theme_t *theme)
