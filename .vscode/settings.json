@@ -4,11 +4,11 @@
     "board/esp32s3-builtin.cfg"
   ],
   "idf.flashType": "UART",
-  "idf.port": "/dev/tty.usbmodem101",
-  "idf.toolsPath": "${workspaceFolder}/.tools/espressif",
-  "idf.espIdfPath": "${workspaceFolder}/.tools/esp-idf",
+  "idf.port": "/dev/cu.usbmodem101",
+  "idf.toolsPath": "/Users/nspzoow/.espressif",
+  "idf.espIdfPath": "/Users/nspzoow/.espressif/v6.0.1/esp-idf",
   "idf.pythonInstallPath": "/usr/bin/python3",
-  "idf.pythonBinPath": "${workspaceFolder}/.tools/espressif/python_env/idf5.5_py3.9_env/bin/python",
+  "idf.pythonBinPath": "/Users/nspzoow/.espressif/python_env/idf6.0_py3.11_env/bin/python",
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
   "files.associations": {
     "sdkconfig.defaults": "properties"

@@ -13,12 +13,12 @@ This project intentionally uses the professional path from the Waveshare docs:
 
 - VS Code
 - Espressif ESP-IDF Extension
-- ESP-IDF `v5.5.x` or newer
+- ESP-IDF `v6.0.1`
 - Target: `esp32s3`
 
 Think of this project as the empty house with the wiring already done: ESP-IDF, target, flash/PSRAM assumptions, and editor integration are prepared, and the calendar UI can be built cleanly on top.
 
-## Bootstrap ESP-IDF locally
+## Configure ESP-IDF
 
 ```bash
 cd ~/Documents/personal/esp32-calendar
@@ -28,14 +28,15 @@ source ./scripts/export-esp-idf.sh
 idf.py --version
 ```
 
-The bootstrap installs ESP-IDF under:
+This project uses the ESP-IDF v6.0.1 installation under:
 
 ```text
-.tools/esp-idf
-.tools/espressif
+/Users/nspzoow/.espressif/v6.0.1/esp-idf
+/Users/nspzoow/.espressif
 ```
 
-So this project does not depend on a global ESP-IDF install.
+The bootstrap script validates that installation and regenerates
+`scripts/export-esp-idf.sh`; it does not install a project-local ESP-IDF copy.
 
 ## Build
 
@@ -99,7 +100,7 @@ and sensor code should feed the same model through `src/platform/esp32/`.
 code ~/Documents/personal/esp32-calendar
 ```
 
-Then install the recommended `Espressif IDF` extension when prompted. The workspace settings point the extension at the project-local ESP-IDF install.
+Then install the recommended `Espressif IDF` extension when prompted. The workspace settings point the extension at the ESP-IDF v6.0.1 install under `/Users/nspzoow/.espressif`.
 
 ## Board notes
 
