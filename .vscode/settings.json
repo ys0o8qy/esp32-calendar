@@ -7,7 +7,8 @@
   "idf.port": "/dev/cu.usbmodem*",
   "idf.toolsPath": "${workspaceFolder}/.tools/espressif",
   "idf.espIdfPath": "${workspaceFolder}/.tools/esp-idf",
-  "idf.pythonInstallPath": "python3",
+  "idf.pythonInstallPath": "/usr/bin/python3",
+  "idf.pythonBinPath": "${workspaceFolder}/.tools/espressif/python_env/idf5.5_py3.9_env/bin/python",
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
   "files.associations": {
     "sdkconfig.defaults": "properties"
