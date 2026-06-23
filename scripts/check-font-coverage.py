@@ -14,15 +14,21 @@ SOURCE_PATHS = [
 ]
 
 
+def parse_covered_codepoints(font_source):
+    covered = set(range(32, 128))
+    for match in re.finditer(r"\{\s*(0x[0-9a-fA-F]+)\s*,", font_source):
+        covered.add(int(match.group(1), 16))
+    for match in re.finditer(r"/\*\s*U\+([0-9a-fA-F]+)\s+", font_source):
+        covered.add(int(match.group(1), 16))
+    return covered
+
+
 def load_coverage():
     if not FONT_PATH.exists():
         raise RuntimeError(f"generated font file not found: {FONT_PATH}")
 
     font_source = FONT_PATH.read_text(encoding="utf-8")
-    covered = set(range(32, 128))
-    for match in re.finditer(r"\{\s*(0x[0-9a-fA-F]+)\s*,", font_source):
-        covered.add(int(match.group(1), 16))
-    return covered
+    return parse_covered_codepoints(font_source)
 
 
 def extract_string_literals(path):

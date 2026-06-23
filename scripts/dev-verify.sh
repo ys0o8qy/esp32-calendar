@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-python3 -m unittest tests/test_render_png_check.py tests/test_rlcd_log_to_png.py
+python3 -m unittest discover -s tests
 cmake -S tests -B build-tests
 cmake --build build-tests
 ctest --test-dir build-tests --output-on-failure

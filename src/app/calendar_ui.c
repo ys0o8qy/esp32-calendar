@@ -42,9 +42,9 @@ static void add_month_grid(lv_obj_t *parent, const calendar_model_t *model)
 
     lv_obj_t *panel = make_panel(parent, 190, 45, 190, 201);
     snprintf(text, sizeof(text), "%d 年 %d 月", model->year, model->month);
-    make_label_box(panel, text, 8, 4, 104, 22);
+    make_label_box(panel, text, 8, 4, 120, 22);
     snprintf(text, sizeof(text), "26周");
-    lv_obj_t *week = make_label_box(panel, text, 140, 4, 40, 22);
+    lv_obj_t *week = make_label_box(panel, text, 138, 4, 44, 22);
     lv_obj_add_style(week, &g_theme.muted, 0);
 
     for (int col = 0; col < CALENDAR_WEEK_DAYS; col++) {
@@ -58,6 +58,7 @@ static void add_month_grid(lv_obj_t *parent, const calendar_model_t *model)
             calendar_day_cell_t *cell = &grid.cells[row][col];
             snprintf(text, sizeof(text), "%d", cell->day);
             lv_obj_t *label = make_label_box(panel, text, 9 + col * 25, 62 + row * 24, 22, 22);
+            lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
             lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
             if (!cell->in_current_month) {
                 lv_obj_add_style(label, &g_theme.muted, 0);
@@ -111,12 +112,15 @@ void calendar_ui_create(calendar_ui_t *ui, const calendar_model_t *model)
 
     lv_obj_t *weather = make_panel(ui->screen, 18, 181, 154, 66);
     snprintf(text, sizeof(text), "%s %s", model->city, model->weather_summary);
-    make_label_box(weather, text, 8, 4, 86, 22);
+    make_label_box(weather, text, 8, 4, 138, 22);
+    snprintf(text, sizeof(text), "湿%d%%", model->humidity_percent);
+    lv_obj_t *humidity = make_label_box(weather, text, 8, 24, 82, 20);
+    lv_obj_add_style(humidity, &g_theme.muted, 0);
     snprintf(text, sizeof(text), "%dC", model->temp_c);
-    lv_obj_t *temp = make_label_box(weather, text, 94, 18, 52, 34);
+    lv_obj_t *temp = make_label_box(weather, text, 96, 25, 50, 34);
     lv_obj_set_style_text_font(temp, &lv_font_montserrat_28, 0);
-    snprintf(text, sizeof(text), "%d-%dC 湿%d%%", model->temp_low_c, model->temp_high_c, model->humidity_percent);
-    lv_obj_t *summary = make_label_box(weather, text, 8, 38, 138, 24);
+    snprintf(text, sizeof(text), "%d-%dC", model->temp_low_c, model->temp_high_c);
+    lv_obj_t *summary = make_label_box(weather, text, 8, 42, 82, 20);
     lv_obj_add_style(summary, &g_theme.muted, 0);
 
     lv_obj_t *event = lv_obj_create(ui->screen);

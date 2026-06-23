@@ -22,3 +22,5 @@ vendor/waveshare-esp32-s3-rlcd-4.2/
 
 # macOS
 .DS_Store
+
+scripts/__pycache__/

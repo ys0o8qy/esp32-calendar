@@ -151,10 +151,10 @@ through `src/platform/esp32/`.
 
 The UI uses a generated 16px, 1bpp Simplified Chinese subset font at
 `src/app/calendar_font_zh.*`. The generator reads the current UI string literals,
-renders only the required non-ASCII glyphs from macOS
-`/System/Library/Fonts/Hiragino Sans GB.ttc`, and leaves ASCII/digits to the
-Montserrat fallback font. After changing Chinese UI text, regenerate and verify
-the subset:
+passes only the required glyphs from LVGL's bundled
+`third_party/lvgl/scripts/built_in_font/SimSun.woff` through `lv_font_conv`, and
+keeps Montserrat as the LVGL fallback font. After changing Chinese UI text,
+regenerate and verify the subset:
 
 ```bash
 python3 scripts/generate-zh-font.py
