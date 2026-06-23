@@ -25,7 +25,9 @@ add_subdirectory("${LVGL_ROOT}" "${CMAKE_BINARY_DIR}/lvgl" EXCLUDE_FROM_ALL)
 
 add_executable(calendar_sim
     main_sdl.c
+    png_writer.c
     ../src/app/calendar_model.c
+    ../src/app/calendar_font_zh.c
     ../src/app/calendar_theme.c
     ../src/app/calendar_ui.c
 )

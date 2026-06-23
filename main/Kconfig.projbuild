@@ -1,0 +1,11 @@
+menu "ESP32 Calendar"
+
+config CALENDAR_DUMP_RLCD_FRAME
+    bool "Dump the first RLCD frame to the serial log"
+    default n
+    help
+        Emit the first ST7305 landscape 1bpp frame buffer as hex chunks.
+        This is intended for render debugging only and should stay disabled
+        during normal firmware runs.
+
+endmenu

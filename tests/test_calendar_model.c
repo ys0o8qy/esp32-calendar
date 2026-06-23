@@ -5,6 +5,9 @@
 
 #include "calendar_model.h"
 
+void test_rlcd_mono_buffer(void);
+void test_png_writer(void);
+
 static void test_status_text_mentions_connectivity_and_cache(void)
 {
     calendar_model_t model = calendar_model_sample();
@@ -49,6 +52,8 @@ int main(void)
     test_status_text_mentions_connectivity_and_cache();
     test_month_grid_marks_today_and_events();
     test_month_grid_uses_adjacent_month_days();
+    test_rlcd_mono_buffer();
+    test_png_writer();
     puts("calendar_model tests passed");
     return 0;
 }

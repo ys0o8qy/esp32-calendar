@@ -95,10 +95,10 @@ void calendar_ui_create(calendar_ui_t *ui, const calendar_model_t *model)
     lv_obj_t *weather = make_panel(ui->screen, 18, 166, 154, 82);
     snprintf(text, sizeof(text), "%s天气", model->city);
     make_label(weather, text, 8, 4);
-    snprintf(text, sizeof(text), "%d°", model->temp_c);
+    snprintf(text, sizeof(text), "%dC", model->temp_c);
     lv_obj_t *temp = make_label(weather, text, 92, 28);
     lv_obj_set_style_text_font(temp, &lv_font_montserrat_28, 0);
-    snprintf(text, sizeof(text), "%s %d-%d°", model->weather_summary, model->temp_low_c, model->temp_high_c);
+    snprintf(text, sizeof(text), "%s %d-%dC", model->weather_summary, model->temp_low_c, model->temp_high_c);
     lv_obj_t *summary = make_label(weather, text, 8, 48);
     lv_obj_add_style(summary, &g_theme.muted, 0);
     snprintf(text, sizeof(text), "湿度 %d%% 体感舒适", model->humidity_percent);
@@ -116,8 +116,7 @@ void calendar_ui_create(calendar_ui_t *ui, const calendar_model_t *model)
     add_month_grid(ui->screen, model);
 
     lv_obj_t *offline = make_panel(ui->screen, 190, 256, 190, 24);
-    lv_obj_set_style_bg_color(offline, lv_color_hex(0xd8d3bf), 0);
-    make_label(offline, "离线策略：RTC 保时，天气保留最近缓存", 4, 3);
+    make_label(offline, "离线策略: RTC 保时 天气保留最近缓存", 4, 3);
 
     lv_scr_load(ui->screen);
 }

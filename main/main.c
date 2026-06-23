@@ -7,6 +7,7 @@
 #include "esp_log.h"
 #include "esp_psram.h"
 #include "calendar_model.h"
+#include "calendar_display.h"
 #include "calendar_platform.h"
 
 static const char *TAG = "esp32-calendar";
@@ -23,6 +24,8 @@ void app_main(void)
     ESP_LOGI(TAG, "Cores: %d, silicon revision: %d", chip_info.cores, chip_info.revision);
     ESP_LOGI(TAG, "Flash: %lu MB", (unsigned long)(flash_size / (1024 * 1024)));
     calendar_platform_init();
+    calendar_model_t model = calendar_platform_read_model();
+    ESP_ERROR_CHECK(calendar_display_start(&model));
 
 #if CONFIG_SPIRAM
     ESP_LOGI(TAG, "PSRAM initialized: %s", esp_psram_is_initialized() ? "yes" : "no");
@@ -32,7 +35,7 @@ void app_main(void)
 #endif
 
     while (true) {
-        calendar_model_t model = calendar_platform_read_model();
+        model = calendar_platform_read_model();
         char status[96];
         calendar_model_status_text(&model, status, sizeof(status));
         ESP_LOGI(TAG, "%s %02d:%02d %s", model.weekday_text, model.hour, model.minute, status);

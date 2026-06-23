@@ -7,6 +7,7 @@
 #include "calendar_model.h"
 #include "calendar_ui.h"
 #include "lvgl.h"
+#include "png_writer.h"
 
 #define SIM_WIDTH 400
 #define SIM_HEIGHT 300
@@ -92,7 +93,19 @@ int main(int argc, char **argv)
     static lv_disp_draw_buf_t draw_buffer;
     static lv_disp_drv_t display_driver;
 
-    bool smoke_test = argc > 1 && strcmp(argv[1], "--smoke-test") == 0;
+    bool smoke_test = false;
+    const char *dump_png_path = NULL;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--smoke-test") == 0) {
+            smoke_test = true;
+        } else if (strcmp(argv[i], "--dump-png") == 0 && i + 1 < argc) {
+            dump_png_path = argv[++i];
+            smoke_test = true;
+        } else {
+            fprintf(stderr, "usage: %s [--smoke-test] [--dump-png PATH]\n", argv[0]);
+            return 2;
+        }
+    }
 
     if (!sdl_init()) {
         return 1;
@@ -131,6 +144,19 @@ int main(int argc, char **argv)
         if (smoke_test && ++iterations > 10) {
             running = false;
         }
+    }
+
+    if (dump_png_path != NULL) {
+        char error[160] = {0};
+        if (!png_write_argb8888(dump_png_path, g_pixels, SIM_WIDTH, SIM_HEIGHT, error, sizeof(error))) {
+            fprintf(stderr, "PNG dump failed: %s\n", error);
+            SDL_DestroyTexture(g_texture);
+            SDL_DestroyRenderer(g_renderer);
+            SDL_DestroyWindow(g_window);
+            SDL_Quit();
+            return 1;
+        }
+        printf("Wrote render PNG: %s\n", dump_png_path);
     }
 
     SDL_DestroyTexture(g_texture);

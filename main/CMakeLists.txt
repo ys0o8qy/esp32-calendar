@@ -2,9 +2,21 @@ idf_component_register(
     SRCS
         "main.c"
         "../src/app/calendar_model.c"
+        "../src/app/calendar_font_zh.c"
+        "../src/app/calendar_theme.c"
+        "../src/app/calendar_ui.c"
+        "../src/platform/esp32/calendar_display.c"
         "../src/platform/esp32/calendar_platform.c"
+        "../src/platform/esp32/rlcd_mono_buffer.c"
     INCLUDE_DIRS
         "."
         "../src/app"
         "../src/platform/esp32"
+    REQUIRES
+        driver
+        esp_lcd
+        esp_psram
+        esp_timer
+        lvgl
+        spi_flash
 )

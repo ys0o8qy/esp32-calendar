@@ -13,6 +13,7 @@ dependencies.lock
 
 # Local third-party source checkouts
 third_party/lvgl/
+vendor/waveshare-esp32-s3-rlcd-4.2/
 
 # VS Code local state
 .vscode/.browse.c_cpp.db*

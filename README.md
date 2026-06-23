@@ -41,7 +41,7 @@ The bootstrap script validates that installation and regenerates
 ## Build
 
 ```bash
-./scripts/build.sh
+./scripts/build.sh esp32
 ```
 
 Or manually:
@@ -52,11 +52,26 @@ idf.py set-target esp32s3
 idf.py build
 ```
 
+Flash over USB Serial/JTAG:
+
+```bash
+source ./scripts/export-esp-idf.sh
+idf.py -p /dev/cu.usbmodem101 flash
+```
+
+`scripts/build.sh` also supports:
+
+```bash
+./scripts/build.sh sim
+./scripts/build.sh all
+```
+
 ## Desktop LVGL simulator
 
 The calendar UI is structured so the LVGL screen can run on a desktop SDL2
 window before it is flashed to the ESP32 board. This keeps layout work fast and
-isolates display/Wi-Fi/weather hardware code behind a platform boundary.
+isolates display/Wi-Fi/weather hardware code behind a platform boundary. The
+desktop simulator and ESP32 firmware both use `src/app/calendar_ui.*`.
 
 Install desktop prerequisites:
 
@@ -73,26 +88,60 @@ git clone --depth 1 --branch v8.3.11 --single-branch https://github.com/lvgl/lvg
 Build and smoke-test the simulator:
 
 ```bash
-cmake -S sim -B build-sim
-cmake --build build-sim
+./scripts/build-sim.sh
 SDL_VIDEODRIVER=dummy ./build-sim/calendar_sim --smoke-test
 ```
 
 Run the interactive simulator:
 
 ```bash
-./build-sim/calendar_sim
+./scripts/run-sim.sh
+```
+
+Dump the simulator render to a PNG and run the structural smoke check:
+
+```bash
+./scripts/render-check.sh
+```
+
+This writes `build-sim/calendar-render.png` by default. To choose the output
+path:
+
+```bash
+./scripts/render-check.sh /tmp/calendar-render.png
+```
+
+For lower-level simulator usage:
+
+```bash
+SDL_VIDEODRIVER=dummy ./build-sim/calendar_sim --dump-png build-sim/calendar-render.png
+python3 scripts/check-render-png.py build-sim/calendar-render.png
 ```
 
 If LVGL is checked out elsewhere, pass it explicitly:
 
 ```bash
-cmake -S sim -B build-sim -DLVGL_ROOT=/absolute/path/to/lvgl
+LVGL_ROOT=/absolute/path/to/lvgl ./scripts/build-sim.sh
 ```
 
 Shared UI data lives in `src/app/calendar_model.*`. LVGL screen construction
-lives in `src/app/calendar_ui.*`. ESP32-specific Wi-Fi, NTP, weather HTTP, RTC,
-and sensor code should feed the same model through `src/platform/esp32/`.
+lives in `src/app/calendar_ui.*`. The ESP32 display bridge lives in
+`src/platform/esp32/calendar_display.*` and adapts LVGL RGB565 draw buffers to
+the ST7305 monochrome RLCD buffer used by the Waveshare board. ESP32-specific
+Wi-Fi, NTP, weather HTTP, RTC, and sensor code should feed the same model
+through `src/platform/esp32/`.
+
+The UI uses a generated 18px, 1bpp Simplified Chinese subset font at
+`src/app/calendar_font_zh.*`. The generator reads the current UI string literals,
+renders only the required non-ASCII glyphs from macOS
+`/System/Library/Fonts/Hiragino Sans GB.ttc`, and leaves ASCII/digits to the
+Montserrat fallback font. After changing Chinese UI text, regenerate and verify
+the subset:
+
+```bash
+python3 scripts/generate-zh-font.py
+python3 scripts/check-font-coverage.py
+```
 
 ## Open in VS Code
 
@@ -115,7 +164,8 @@ Waveshare ESP32-S3-RLCD-4.2 uses:
 - PCF85063 RTC
 - SHTC3 temperature/humidity sensor
 
-`sdkconfig.defaults` enables ESP32-S3 target, 16MB flash, and octal PSRAM.
+`sdkconfig.defaults` enables ESP32-S3 target, 16MB flash, octal PSRAM, and the
+LVGL v8 options needed by the shared calendar UI.
 
 ## Fetch Waveshare examples
 
@@ -129,6 +179,12 @@ Expected reference location:
 vendor/waveshare-esp32-s3-rlcd-4.2/02_Example/ESP-IDF
 ```
 
-## Next step for display/calendar UI
+The ESP32 display port follows the official ESP-IDF `08_LVGL_V8_Test` example:
+GPIO12 MOSI, GPIO11 SCK, GPIO5 DC, GPIO40 CS, GPIO41 reset, 400x300 landscape,
+and the ST7305 initialization sequence from Waveshare.
 
-Use Waveshare's ESP-IDF LVGL/factory examples as the hardware reference. Calendar UI should start from their LVGL v8 example path because Waveshare marks LVGL `v8.3.11` as the stable dependency for several examples.
+For hardware render debugging, enable `CALENDAR_DUMP_RLCD_FRAME` in
+`idf.py menuconfig` under `ESP32 Calendar`. The first LVGL flush will log
+`CALENDAR_RLCD_FRAME_BEGIN`, `CALENDAR_RLCD_FRAME_HEX`, and
+`CALENDAR_RLCD_FRAME_END` records containing the final ST7305 1bpp frame buffer
+sent to the panel.
