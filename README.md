@@ -1,0 +1,91 @@
+# esp32-calendar
+
+VS Code + ESP-IDF scaffold for the Waveshare ESP32-S3-RLCD-4.2 board.
+
+## Reference
+
+- Waveshare docs: https://docs.waveshare.net/ESP32-S3-RLCD-4.2/
+- Waveshare example repo: https://github.com/waveshareteam/ESP32-S3-RLCD-4.2
+
+## Chosen stack
+
+This project intentionally uses the professional path from the Waveshare docs:
+
+- VS Code
+- Espressif ESP-IDF Extension
+- ESP-IDF `v5.5.x` or newer
+- Target: `esp32s3`
+
+Think of this project as the empty house with the wiring already done: ESP-IDF, target, flash/PSRAM assumptions, and editor integration are prepared, and the calendar UI can be built cleanly on top.
+
+## Bootstrap ESP-IDF locally
+
+```bash
+cd ~/Documents/personal/esp32-calendar
+chmod +x scripts/*.sh
+./scripts/bootstrap-esp-idf.sh
+source ./scripts/export-esp-idf.sh
+idf.py --version
+```
+
+The bootstrap installs ESP-IDF under:
+
+```text
+.tools/esp-idf
+.tools/espressif
+```
+
+So this project does not depend on a global ESP-IDF install.
+
+## Build
+
+```bash
+./scripts/build.sh
+```
+
+Or manually:
+
+```bash
+source ./scripts/export-esp-idf.sh
+idf.py set-target esp32s3
+idf.py build
+```
+
+## Open in VS Code
+
+```bash
+code ~/Documents/personal/esp32-calendar
+```
+
+Then install the recommended `Espressif IDF` extension when prompted. The workspace settings point the extension at the project-local ESP-IDF install.
+
+## Board notes
+
+Waveshare ESP32-S3-RLCD-4.2 uses:
+
+- ESP32-S3-WROOM-1-N16R8
+- 16MB Flash
+- 8MB PSRAM
+- 4.2-inch RLCD driven by ST7305
+- ES8311 audio codec
+- ES7210 ADC / dual mic path
+- PCF85063 RTC
+- SHTC3 temperature/humidity sensor
+
+`sdkconfig.defaults` enables ESP32-S3 target, 16MB flash, and octal PSRAM.
+
+## Fetch Waveshare examples
+
+```bash
+./scripts/fetch-waveshare-examples.sh
+```
+
+Expected reference location:
+
+```text
+vendor/waveshare-esp32-s3-rlcd-4.2/02_Example/ESP-IDF
+```
+
+## Next step for display/calendar UI
+
+Use Waveshare's ESP-IDF LVGL/factory examples as the hardware reference. Calendar UI should start from their LVGL v8 example path because Waveshare marks LVGL `v8.3.11` as the stable dependency for several examples.

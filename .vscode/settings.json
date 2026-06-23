@@ -1,0 +1,15 @@
+{
+  "idf.adapterTargetName": "esp32s3",
+  "idf.openOcdConfigs": [
+    "board/esp32s3-builtin.cfg"
+  ],
+  "idf.flashType": "UART",
+  "idf.port": "/dev/cu.usbmodem*",
+  "idf.toolsPath": "${workspaceFolder}/.tools/espressif",
+  "idf.espIdfPath": "${workspaceFolder}/.tools/esp-idf",
+  "idf.pythonInstallPath": "python3",
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "files.associations": {
+    "sdkconfig.defaults": "properties"
+  }
+}

@@ -1,0 +1,35 @@
+#include <stdio.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_chip_info.h"
+#include "esp_flash.h"
+#include "esp_heap_caps.h"
+#include "esp_log.h"
+#include "esp_psram.h"
+
+static const char *TAG = "esp32-calendar";
+
+void app_main(void)
+{
+    esp_chip_info_t chip_info;
+    esp_chip_info(&chip_info);
+
+    uint32_t flash_size = 0;
+    esp_flash_get_size(NULL, &flash_size);
+
+    ESP_LOGI(TAG, "Booting ESP32-S3-RLCD-4.2 calendar scaffold");
+    ESP_LOGI(TAG, "Cores: %d, silicon revision: %d", chip_info.cores, chip_info.revision);
+    ESP_LOGI(TAG, "Flash: %lu MB", (unsigned long)(flash_size / (1024 * 1024)));
+
+#if CONFIG_SPIRAM
+    ESP_LOGI(TAG, "PSRAM initialized: %s", esp_psram_is_initialized() ? "yes" : "no");
+    ESP_LOGI(TAG, "Free PSRAM: %u bytes", (unsigned int)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+#else
+    ESP_LOGW(TAG, "PSRAM is not enabled in sdkconfig");
+#endif
+
+    while (true) {
+        ESP_LOGI(TAG, "alive");
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
+}
