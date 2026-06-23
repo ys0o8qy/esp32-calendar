@@ -1,5 +1,8 @@
 # ESP-IDF build outputs
 build/
+build-idf/
+build-sim/
+build-tests/
 sdkconfig
 sdkconfig.old
 managed_components/
@@ -8,6 +11,12 @@ dependencies.lock
 # Local ESP-IDF tool install, if using project-local bootstrap
 .tools/esp-idf/
 .tools/espressif/
+
+# Local git worktrees
+.worktrees/
+
+# Local third-party source checkouts
+third_party/lvgl/
 
 # VS Code local state
 .vscode/.browse.c_cpp.db*

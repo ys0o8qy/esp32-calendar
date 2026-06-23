@@ -51,6 +51,48 @@ idf.py set-target esp32s3
 idf.py build
 ```
 
+## Desktop LVGL simulator
+
+The calendar UI is structured so the LVGL screen can run on a desktop SDL2
+window before it is flashed to the ESP32 board. This keeps layout work fast and
+isolates display/Wi-Fi/weather hardware code behind a platform boundary.
+
+Install desktop prerequisites:
+
+```bash
+brew install sdl2 cmake
+```
+
+Fetch LVGL v8 locally. The checkout is intentionally ignored by Git:
+
+```bash
+git clone --depth 1 --branch v8.3.11 --single-branch https://github.com/lvgl/lvgl.git third_party/lvgl
+```
+
+Build and smoke-test the simulator:
+
+```bash
+cmake -S sim -B build-sim
+cmake --build build-sim
+SDL_VIDEODRIVER=dummy ./build-sim/calendar_sim --smoke-test
+```
+
+Run the interactive simulator:
+
+```bash
+./build-sim/calendar_sim
+```
+
+If LVGL is checked out elsewhere, pass it explicitly:
+
+```bash
+cmake -S sim -B build-sim -DLVGL_ROOT=/absolute/path/to/lvgl
+```
+
+Shared UI data lives in `src/app/calendar_model.*`. LVGL screen construction
+lives in `src/app/calendar_ui.*`. ESP32-specific Wi-Fi, NTP, weather HTTP, RTC,
+and sensor code should feed the same model through `src/platform/esp32/`.
+
 ## Open in VS Code
 
 ```bash

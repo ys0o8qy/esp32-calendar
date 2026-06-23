@@ -1,2 +1,10 @@
-idf_component_register(SRCS "main.c"
-                       INCLUDE_DIRS ".")
+idf_component_register(
+    SRCS
+        "main.c"
+        "../src/app/calendar_model.c"
+        "../src/platform/esp32/calendar_platform.c"
+    INCLUDE_DIRS
+        "."
+        "../src/app"
+        "../src/platform/esp32"
+)

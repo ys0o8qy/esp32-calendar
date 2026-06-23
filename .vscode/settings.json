@@ -4,7 +4,7 @@
     "board/esp32s3-builtin.cfg"
   ],
   "idf.flashType": "UART",
-  "idf.port": "/dev/cu.usbmodem*",
+  "idf.port": "/dev/tty.usbmodem101",
   "idf.toolsPath": "${workspaceFolder}/.tools/espressif",
   "idf.espIdfPath": "${workspaceFolder}/.tools/esp-idf",
   "idf.pythonInstallPath": "/usr/bin/python3",
@@ -12,5 +12,16 @@
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
   "files.associations": {
     "sdkconfig.defaults": "properties"
-  }
+  },
+  "idf.customExtraVars": {
+    "OPENOCD_USB_ADAPTER_LOCATION": "0-1",
+    "IDF_TARGET": "esp32s3"
+  },
+  "idf.currentSetup": "/Users/nspzoow/.espressif/v6.0.1/esp-idf",
+  "clangd.path": "/Users/nspzoow/.espressif/tools/esp-clang/esp-20.1.1_20250829/esp-clang/bin/clangd",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=**",
+    "--compile-commands-dir=/Users/nspzoow/Documents/personal/esp32-calendar/build"
+  ]
 }
