@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+export PYTHONDONTWRITEBYTECODE=1
+
 run_esp32=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -27,11 +29,11 @@ cmake -S tests -B build-tests
 cmake --build build-tests
 ctest --test-dir build-tests --output-on-failure
 
-./scripts/render-check.sh build-sim/calendar-render.png
-
 if [[ "$run_esp32" == "1" ]]; then
   ./scripts/build.sh esp32
 fi
+
+./scripts/render-check.sh build-sim/calendar-render.png
 
 cat <<'EOF'
 Render verification exported: build-sim/calendar-render.png

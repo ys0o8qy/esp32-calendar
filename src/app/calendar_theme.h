@@ -11,4 +11,3 @@ typedef struct {
 } calendar_theme_t;
 
 void calendar_theme_init(calendar_theme_t *theme);
-void calendar_theme_reset(calendar_theme_t *theme);

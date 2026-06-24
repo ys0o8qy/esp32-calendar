@@ -28,6 +28,8 @@ add_executable(calendar_sim
     png_writer.c
     ../src/app/calendar_model.c
     ../src/app/calendar_font_zh.c
+    ../src/app/calendar_font_fusion_28.c
+    ../src/app/calendar_font_fusion_48.c
     ../src/app/calendar_theme.c
     ../src/app/calendar_ui.c
 )

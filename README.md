@@ -1,6 +1,6 @@
 # esp32-calendar
 
-VS Code + ESP-IDF scaffold for the Waveshare ESP32-S3-RLCD-4.2 board.
+ESP-IDF calendar firmware and LVGL simulator for the Waveshare ESP32-S3-RLCD-4.2 board.
 
 ## Reference
 
@@ -149,11 +149,14 @@ the ST7305 monochrome RLCD buffer used by the Waveshare board. ESP32-specific
 Wi-Fi, NTP, weather HTTP, RTC, and sensor code should feed the same model
 through `src/platform/esp32/`.
 
-The UI uses a generated 16px, 1bpp Simplified Chinese subset font at
-`src/app/calendar_font_zh.*`. The generator reads the current UI string literals,
-passes only the required glyphs from LVGL's bundled
-`third_party/lvgl/scripts/built_in_font/SimSun.woff` through `lv_font_conv`, and
-keeps Montserrat as the LVGL fallback font. After changing Chinese UI text,
+The UI uses a generated 10px, 1bpp Simplified Chinese subset font at
+`src/app/calendar_font_zh.*`. The generator reads the current UI string literals
+and converts the project font asset,
+`assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf`, with `lv_font_conv`.
+Fusion Pixel Font is a monospaced pixel font chosen for low-resolution CJK
+rendering. The generator emits the 10px default UI subset plus larger Fusion
+Pixel Font sizes for the primary time and temperature labels, so the project
+does not mix Montserrat with the CJK UI font. After changing Chinese UI text,
 regenerate and verify the subset:
 
 ```bash

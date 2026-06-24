@@ -26,6 +26,11 @@ class GenerateZhFontTests(unittest.TestCase):
         for char in "0123456789WiFiNTPRTC:%-C":
             self.assertIn(char, chars)
 
+    def test_scans_esp32_platform_text_for_font_coverage(self):
+        generator = load_generator()
+
+        self.assertIn(generator.ROOT / "src/platform/esp32/calendar_platform.c", generator.SOURCE_PATHS)
+
     def test_builds_lvgl_font_converter_command_for_calendar_subset(self):
         generator = load_generator()
 
@@ -37,26 +42,25 @@ class GenerateZhFontTests(unittest.TestCase):
         self.assertIn("--bpp", cmd)
         self.assertIn("1", cmd)
         self.assertIn("--size", cmd)
-        self.assertIn("16", cmd)
-        self.assertIn("--font", cmd)
-        font_arg = cmd[cmd.index("--font") + 1]
-        self.assertEqual(font_arg, "third_party/lvgl/scripts/built_in_font/SimSun.woff")
-        self.assertFalse(pathlib.Path(font_arg).is_absolute())
-        self.assertIn("--symbols", cmd)
-        self.assertIn("A天", cmd)
+        self.assertIn("10", cmd)
+        font_args = [cmd[index + 1] for index, value in enumerate(cmd) if value == "--font"]
+        self.assertEqual(font_args, ["assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf"])
+        self.assertFalse(any(pathlib.Path(font_arg).is_absolute() for font_arg in font_args))
+        symbol_args = [cmd[index + 1] for index, value in enumerate(cmd) if value == "--symbols"]
+        self.assertEqual(symbol_args, ["A天"])
         output_arg = cmd[cmd.index("-o") + 1]
         self.assertEqual(output_arg, "src/app/calendar_font_zh.c")
         self.assertFalse(pathlib.Path(output_arg).is_absolute())
         self.assertIn("--lv-font-name", cmd)
         self.assertIn("calendar_font_zh_16", cmd)
-        self.assertIn("--lv-fallback", cmd)
-        self.assertIn("lv_font_montserrat_16", cmd)
+        self.assertNotIn("--lv-fallback", cmd)
+        self.assertNotIn("lv_font_montserrat_16", cmd)
 
-    def test_uses_lvgl_bundled_woff_font_source_supported_by_converter(self):
+    def test_uses_fusion_pixel_font_source(self):
         generator = load_generator()
 
-        self.assertEqual(generator.FONT_SOURCE.name, "SimSun.woff")
-        self.assertIn("third_party/lvgl/scripts/built_in_font", generator.FONT_SOURCE.as_posix())
+        self.assertEqual(generator.FONT_SOURCE.name, "fusion-pixel-10px-monospaced-zh_hans.ttf")
+        self.assertIn("assets/fonts", generator.FONT_SOURCE.as_posix())
 
     def test_generate_font_runs_lvgl_converter_and_writes_header(self):
         generator = load_generator()
@@ -64,14 +68,24 @@ class GenerateZhFontTests(unittest.TestCase):
         with mock.patch.object(generator.subprocess, "run") as run:
             generator.generate_font(["A", "天"])
 
-        run.assert_called_once()
-        self.assertEqual(run.call_args.args[0][0], "lv_font_conv")
-        self.assertEqual(run.call_args.kwargs["cwd"], generator.ROOT)
-        self.assertTrue(generator.OUTPUT_H.exists())
-        self.assertIn(
-            "LV_FONT_DECLARE(calendar_font_zh_16);",
-            generator.OUTPUT_H.read_text(encoding="utf-8"),
+        self.assertEqual(run.call_count, 3)
+        self.assertTrue(all(call.args[0][0] == "lv_font_conv" for call in run.call_args_list))
+        self.assertTrue(all(call.kwargs["cwd"] == generator.ROOT for call in run.call_args_list))
+        commands = [call.args[0] for call in run.call_args_list]
+        outputs = [cmd[cmd.index("-o") + 1] for cmd in commands]
+        self.assertEqual(
+            outputs,
+            [
+                "src/app/calendar_font_zh.c",
+                "src/app/calendar_font_fusion_48.c",
+                "src/app/calendar_font_fusion_28.c",
+            ],
         )
+        self.assertTrue(generator.OUTPUT_H.exists())
+        header = generator.OUTPUT_H.read_text(encoding="utf-8")
+        self.assertIn("LV_FONT_DECLARE(calendar_font_zh_16);", header)
+        self.assertIn("LV_FONT_DECLARE(calendar_font_fusion_48);", header)
+        self.assertIn("LV_FONT_DECLARE(calendar_font_fusion_28);", header)
 
 
 if __name__ == "__main__":

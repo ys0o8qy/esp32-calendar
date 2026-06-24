@@ -34,12 +34,3 @@ void calendar_theme_init(calendar_theme_t *theme)
     lv_style_set_pad_hor(&theme->today, 2);
     lv_style_set_pad_ver(&theme->today, 0);
 }
-
-void calendar_theme_reset(calendar_theme_t *theme)
-{
-    lv_style_reset(&theme->screen);
-    lv_style_reset(&theme->panel);
-    lv_style_reset(&theme->muted);
-    lv_style_reset(&theme->inverse);
-    lv_style_reset(&theme->today);
-}

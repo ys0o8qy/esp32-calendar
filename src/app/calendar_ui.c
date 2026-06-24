@@ -1,10 +1,21 @@
 #include "calendar_ui.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 
+#include "calendar_font_zh.h"
 #include "calendar_theme.h"
 
 static calendar_theme_t g_theme;
+static bool g_theme_initialized;
+
+static void ensure_theme(void)
+{
+    if (!g_theme_initialized) {
+        calendar_theme_init(&g_theme);
+        g_theme_initialized = true;
+    }
+}
 
 static lv_obj_t *make_label(lv_obj_t *parent, const char *text, int x, int y)
 {
@@ -38,12 +49,12 @@ static void add_month_grid(lv_obj_t *parent, const calendar_model_t *model)
     calendar_month_grid_t grid;
     char text[16];
 
-    calendar_model_month_grid(model->year, model->month, model->day, &grid);
+    calendar_model_month_grid(model, &grid);
 
     lv_obj_t *panel = make_panel(parent, 190, 45, 190, 201);
     snprintf(text, sizeof(text), "%d 年 %d 月", model->year, model->month);
     make_label_box(panel, text, 8, 4, 120, 22);
-    snprintf(text, sizeof(text), "26周");
+    snprintf(text, sizeof(text), "%d周", calendar_model_iso_week(model->year, model->month, model->day));
     lv_obj_t *week = make_label_box(panel, text, 138, 4, 44, 22);
     lv_obj_add_style(week, &g_theme.muted, 0);
 
@@ -53,12 +64,11 @@ static void add_month_grid(lv_obj_t *parent, const calendar_model_t *model)
         lv_obj_add_style(label, &g_theme.muted, 0);
     }
 
-    for (int row = 0; row < 5; row++) {
+    for (int row = 0; row < CALENDAR_WEEK_ROWS; row++) {
         for (int col = 0; col < CALENDAR_WEEK_DAYS; col++) {
             calendar_day_cell_t *cell = &grid.cells[row][col];
             snprintf(text, sizeof(text), "%d", cell->day);
-            lv_obj_t *label = make_label_box(panel, text, 9 + col * 25, 62 + row * 24, 22, 22);
-            lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
+            lv_obj_t *label = make_label_box(panel, text, 9 + col * 25, 58 + row * 20, 22, 19);
             lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
             if (!cell->in_current_month) {
                 lv_obj_add_style(label, &g_theme.muted, 0);
@@ -72,21 +82,17 @@ static void add_month_grid(lv_obj_t *parent, const calendar_model_t *model)
                 lv_obj_set_style_bg_color(dot, lv_color_hex(0x171717), 0);
                 lv_obj_set_style_radius(dot, LV_RADIUS_CIRCLE, 0);
                 lv_obj_set_size(dot, 4, 4);
-                lv_obj_set_pos(dot, 18 + col * 25, 79 + row * 24);
+                lv_obj_set_pos(dot, 18 + col * 25, 73 + row * 20);
             }
         }
     }
 }
 
-void calendar_ui_create(calendar_ui_t *ui, const calendar_model_t *model)
+void calendar_ui_update(calendar_ui_t *ui, const calendar_model_t *model)
 {
     char text[96];
 
-    calendar_theme_init(&g_theme);
-    ui->screen = lv_obj_create(NULL);
-    lv_obj_remove_style_all(ui->screen);
-    lv_obj_add_style(ui->screen, &g_theme.screen, 0);
-    lv_obj_set_size(ui->screen, 400, 300);
+    lv_obj_clean(ui->screen);
 
     snprintf(
         text,
@@ -104,7 +110,7 @@ void calendar_ui_create(calendar_ui_t *ui, const calendar_model_t *model)
 
     snprintf(text, sizeof(text), "%02d:%02d", model->hour, model->minute);
     lv_obj_t *time = make_label(ui->screen, text, 18, 78);
-    lv_obj_set_style_text_font(time, &lv_font_montserrat_48, 0);
+    lv_obj_set_style_text_font(time, &calendar_font_fusion_48, 0);
 
     make_label_box(ui->screen, model->lunar_text, 21, 135, 154, 22);
     lv_obj_t *hint = make_label_box(ui->screen, model->day_hint, 21, 158, 154, 22);
@@ -118,7 +124,7 @@ void calendar_ui_create(calendar_ui_t *ui, const calendar_model_t *model)
     lv_obj_add_style(humidity, &g_theme.muted, 0);
     snprintf(text, sizeof(text), "%dC", model->temp_c);
     lv_obj_t *temp = make_label_box(weather, text, 96, 25, 50, 34);
-    lv_obj_set_style_text_font(temp, &lv_font_montserrat_28, 0);
+    lv_obj_set_style_text_font(temp, &calendar_font_fusion_28, 0);
     snprintf(text, sizeof(text), "%d-%dC", model->temp_low_c, model->temp_high_c);
     lv_obj_t *summary = make_label_box(weather, text, 8, 42, 82, 20);
     lv_obj_add_style(summary, &g_theme.muted, 0);
@@ -135,6 +141,15 @@ void calendar_ui_create(calendar_ui_t *ui, const calendar_model_t *model)
 
     lv_obj_t *offline = make_panel(ui->screen, 190, 254, 190, 32);
     make_label_box(offline, "离线: RTC保时 缓存", 6, 2, 176, 28);
+}
 
+void calendar_ui_create(calendar_ui_t *ui, const calendar_model_t *model)
+{
+    ensure_theme();
+    ui->screen = lv_obj_create(NULL);
+    lv_obj_remove_style_all(ui->screen);
+    lv_obj_add_style(ui->screen, &g_theme.screen, 0);
+    lv_obj_set_size(ui->screen, 400, 300);
+    calendar_ui_update(ui, model);
     lv_scr_load(ui->screen);
 }

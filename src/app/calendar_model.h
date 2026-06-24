@@ -44,4 +44,5 @@ typedef struct {
 
 calendar_model_t calendar_model_sample(void);
 void calendar_model_status_text(const calendar_model_t *model, char *buffer, size_t buffer_size);
-void calendar_model_month_grid(int year, int month, int today, calendar_month_grid_t *grid);
+int calendar_model_iso_week(int year, int month, int day);
+void calendar_model_month_grid(const calendar_model_t *model, calendar_month_grid_t *grid);

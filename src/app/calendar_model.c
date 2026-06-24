@@ -22,6 +22,15 @@ static int days_in_month(int year, int month)
     return days[month - 1];
 }
 
+static int day_of_year(int year, int month, int day)
+{
+    int ordinal = day;
+    for (int m = 1; m < month; m++) {
+        ordinal += days_in_month(year, m);
+    }
+    return ordinal;
+}
+
 static int weekday_monday_first(int year, int month, int day)
 {
     if (month < 3) {
@@ -36,9 +45,26 @@ static int weekday_monday_first(int year, int month, int day)
     return (sunday_first + 6) % 7;
 }
 
-static bool sample_has_event(int day)
+static bool model_has_event(const calendar_model_t *model, int day)
 {
-    return day == 26 || day == 30;
+    size_t count = model->event_day_count;
+    if (count > CALENDAR_MAX_EVENTS) {
+        count = CALENDAR_MAX_EVENTS;
+    }
+
+    for (size_t i = 0; i < count; i++) {
+        if (model->event_days[i] == day) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static int iso_weeks_in_year(int year)
+{
+    int jan1_weekday = weekday_monday_first(year, 1, 1);
+    return jan1_weekday == 3 || (jan1_weekday == 2 && is_leap_year(year)) ? 53 : 52;
 }
 
 calendar_model_t calendar_model_sample(void)
@@ -86,10 +112,30 @@ void calendar_model_status_text(const calendar_model_t *model, char *buffer, siz
         model->battery_percent);
 }
 
-void calendar_model_month_grid(int year, int month, int today, calendar_month_grid_t *grid)
+int calendar_model_iso_week(int year, int month, int day)
+{
+    int ordinal = day_of_year(year, month, day);
+    int weekday = weekday_monday_first(year, month, day);
+    int week = (ordinal - weekday + 9) / 7;
+
+    if (week < 1) {
+        return iso_weeks_in_year(year - 1);
+    }
+
+    int weeks_this_year = iso_weeks_in_year(year);
+    if (week > weeks_this_year) {
+        return 1;
+    }
+
+    return week;
+}
+
+void calendar_model_month_grid(const calendar_model_t *model, calendar_month_grid_t *grid)
 {
     memset(grid, 0, sizeof(*grid));
 
+    int year = model->year;
+    int month = model->month;
     int first_weekday = weekday_monday_first(year, month, 1);
     int current_month_days = days_in_month(year, month);
     int previous_month = month == 1 ? 12 : month - 1;
@@ -116,7 +162,7 @@ void calendar_model_month_grid(int year, int month, int today, calendar_month_gr
 
         cell->day = day_number;
         cell->in_current_month = true;
-        cell->is_today = day_number == today;
-        cell->has_event = sample_has_event(day_number);
+        cell->is_today = day_number == model->day;
+        cell->has_event = model_has_event(model, day_number);
     }
 }

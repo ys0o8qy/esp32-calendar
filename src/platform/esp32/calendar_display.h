@@ -4,3 +4,4 @@
 #include "calendar_model.h"
 
 esp_err_t calendar_display_start(const calendar_model_t *model);
+esp_err_t calendar_display_update(const calendar_model_t *model);

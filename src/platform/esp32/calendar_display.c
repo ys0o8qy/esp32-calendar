@@ -361,3 +361,17 @@ esp_err_t calendar_display_start(const calendar_model_t *model)
     ESP_LOGI(TAG, "calendar UI loaded on RLCD");
     return ESP_OK;
 }
+
+esp_err_t calendar_display_update(const calendar_model_t *model)
+{
+    ESP_RETURN_ON_FALSE(g_lvgl_lock != NULL, ESP_ERR_INVALID_STATE, TAG, "LVGL port is not initialized");
+    ESP_RETURN_ON_FALSE(g_ui.screen != NULL, ESP_ERR_INVALID_STATE, TAG, "calendar UI is not initialized");
+
+    if (xSemaphoreTake(g_lvgl_lock, portMAX_DELAY) == pdTRUE) {
+        calendar_ui_update(&g_ui, model);
+        xSemaphoreGive(g_lvgl_lock);
+        return ESP_OK;
+    }
+
+    return ESP_FAIL;
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a small LVGL 1bpp Simplified Chinese font for the calendar UI."""
+"""Generate the LVGL 1bpp Fusion Pixel Font subset for the calendar UI."""
 
 from __future__ import annotations
 
@@ -9,17 +9,31 @@ import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FONT_SOURCE = ROOT / "third_party/lvgl/scripts/built_in_font/SimSun.woff"
+FONT_SOURCE = ROOT / "assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf"
 SOURCE_PATHS = [
     ROOT / "src/app/calendar_model.c",
     ROOT / "src/app/calendar_ui.c",
+    ROOT / "src/platform/esp32/calendar_platform.c",
 ]
 OUTPUT_C = ROOT / "src/app/calendar_font_zh.c"
 OUTPUT_H = ROOT / "src/app/calendar_font_zh.h"
-FONT_SIZE = 16
+FONT_SIZE = 10
 FONT_BPP = 1
 FONT_NAME = "calendar_font_zh_16"
-FALLBACK_FONT_NAME = "lv_font_montserrat_16"
+LARGE_FONT_VARIANTS = [
+    {
+        "output": ROOT / "src/app/calendar_font_fusion_48.c",
+        "size": 48,
+        "name": "calendar_font_fusion_48",
+        "symbols": "0123456789:",
+    },
+    {
+        "output": ROOT / "src/app/calendar_font_fusion_28.c",
+        "size": 28,
+        "name": "calendar_font_fusion_28",
+        "symbols": "0123456789-C",
+    },
+]
 REQUIRED_ASCII_CHARS = (
     "0123456789"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -43,7 +57,13 @@ def repo_relative(path: Path) -> str:
     return path.relative_to(ROOT).as_posix()
 
 
-def build_lv_font_conv_command(chars: list[str]) -> list[str]:
+def build_lv_font_conv_command(
+    chars: list[str],
+    *,
+    output: Path = OUTPUT_C,
+    size: int = FONT_SIZE,
+    font_name: str = FONT_NAME,
+) -> list[str]:
     symbols = "".join(chars)
     return [
         "lv_font_conv",
@@ -52,7 +72,7 @@ def build_lv_font_conv_command(chars: list[str]) -> list[str]:
         "--bpp",
         str(FONT_BPP),
         "--size",
-        str(FONT_SIZE),
+        str(size),
         "--font",
         repo_relative(FONT_SOURCE),
         "--symbols",
@@ -60,13 +80,11 @@ def build_lv_font_conv_command(chars: list[str]) -> list[str]:
         "--format",
         "lvgl",
         "-o",
-        repo_relative(OUTPUT_C),
+        repo_relative(output),
         "--lv-include",
-        "calendar_font_zh.h",
+        OUTPUT_H.name,
         "--lv-font-name",
-        FONT_NAME,
-        "--lv-fallback",
-        FALLBACK_FONT_NAME,
+        font_name,
         "--force-fast-kern-format",
     ]
 
@@ -78,6 +96,8 @@ def write_header() -> None:
 #include "lvgl.h"
 
 LV_FONT_DECLARE({FONT_NAME});
+LV_FONT_DECLARE(calendar_font_fusion_48);
+LV_FONT_DECLARE(calendar_font_fusion_28);
 """,
         encoding="utf-8",
     )
@@ -86,14 +106,28 @@ LV_FONT_DECLARE({FONT_NAME});
 def generate_font(chars: list[str]) -> None:
     write_header()
     subprocess.run(build_lv_font_conv_command(chars), check=True, cwd=ROOT)
+    for variant in LARGE_FONT_VARIANTS:
+        subprocess.run(
+            build_lv_font_conv_command(
+                list(variant["symbols"]),
+                output=variant["output"],
+                size=variant["size"],
+                font_name=variant["name"],
+            ),
+            check=True,
+            cwd=ROOT,
+        )
 
 
 def main() -> int:
     if not FONT_SOURCE.exists():
-        raise RuntimeError(f"Simplified Chinese font not found: {FONT_SOURCE}")
+        raise RuntimeError(f"font not found: {FONT_SOURCE}")
     chars = extract_chars()
     generate_font(chars)
-    print(f"generated {OUTPUT_C.relative_to(ROOT)} with {len(chars)} glyphs from {FONT_SOURCE}")
+    print(
+        f"generated {OUTPUT_C.relative_to(ROOT)} with {len(chars)} glyphs "
+        f"from {FONT_SOURCE}"
+    )
     return 0
 
 

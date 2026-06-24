@@ -11,6 +11,7 @@ FONT_PATH = ROOT / "src/app/calendar_font_zh.c"
 SOURCE_PATHS = [
     ROOT / "src/app/calendar_ui.c",
     ROOT / "src/app/calendar_model.c",
+    ROOT / "src/platform/esp32/calendar_platform.c",
 ]
 
 
