@@ -1,0 +1,15 @@
+idf_component_register(
+    SRCS
+        "src/voice_assistant.c"
+        "src/voice_state.c"
+        "src/voice_protocol.c"
+        "src/voice_audio.c"
+        "src/voice_transport_ws.c"
+        "src/voice_board_waveshare_rlcd_4_2.c"
+    INCLUDE_DIRS
+        "include"
+    PRIV_INCLUDE_DIRS
+        "src"
+    REQUIRES
+        esp_timer
+)

@@ -1,0 +1,39 @@
+menu "Voice Assistant SDK"
+
+config VOICE_ASSISTANT_ENABLE
+    bool "Enable voice assistant SDK"
+    default y
+    help
+        Enable the reusable voice assistant component and calendar integration.
+
+config VOICE_ASSISTANT_BACKEND_URL
+    string "Voice assistant backend WebSocket URL"
+    default ""
+    depends on VOICE_ASSISTANT_ENABLE
+    help
+        URL of the trusted backend that proxies cloud model providers.
+
+config VOICE_ASSISTANT_DEVICE_ID
+    string "Voice assistant device id"
+    default "esp32-calendar"
+    depends on VOICE_ASSISTANT_ENABLE
+
+config VOICE_ASSISTANT_MANUAL_TRIGGER
+    bool "Enable manual listen trigger"
+    default y
+    depends on VOICE_ASSISTANT_ENABLE
+
+config VOICE_ASSISTANT_WAKE_WORD
+    bool "Enable local wake word"
+    default n
+    depends on VOICE_ASSISTANT_ENABLE
+    help
+        Reserved for esp-sr WakeNet integration after audio bring-up.
+
+config VOICE_ASSISTANT_DEFAULT_VOLUME
+    int "Default speaker volume"
+    default 70
+    range 0 100
+    depends on VOICE_ASSISTANT_ENABLE
+
+endmenu

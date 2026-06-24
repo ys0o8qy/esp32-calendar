@@ -89,6 +89,10 @@ calendar_model_t calendar_model_sample(void)
         .ntp_synced = true,
         .weather_updated_at = "08:12",
         .next_event_text = "10:30 项目同步",
+        .assistant_state_text = "语音待机",
+        .assistant_caption = "",
+        .assistant_error = "",
+        .assistant_active = false,
         .event_days = {26, 30},
         .event_day_count = 2,
     };

@@ -122,10 +122,11 @@ void calendar_ui_update(calendar_ui_t *ui, const calendar_model_t *model)
     snprintf(text, sizeof(text), "湿%d%%", model->humidity_percent);
     lv_obj_t *humidity = make_label_box(weather, text, 8, 24, 82, 20);
     lv_obj_add_style(humidity, &g_theme.muted, 0);
-    snprintf(text, sizeof(text), "%dC", model->temp_c);
-    lv_obj_t *temp = make_label_box(weather, text, 96, 25, 50, 34);
+    snprintf(text, sizeof(text), "%d°C", model->temp_c);
+    lv_obj_t *temp = make_label_box(weather, text, 62, 20, 72, 34);
     lv_obj_set_style_text_font(temp, &calendar_font_fusion_28, 0);
-    snprintf(text, sizeof(text), "%d-%dC", model->temp_low_c, model->temp_high_c);
+    lv_obj_set_style_text_align(temp, LV_TEXT_ALIGN_RIGHT, 0);
+    snprintf(text, sizeof(text), "%d-%d°C", model->temp_low_c, model->temp_high_c);
     lv_obj_t *summary = make_label_box(weather, text, 8, 42, 82, 20);
     lv_obj_add_style(summary, &g_theme.muted, 0);
 
@@ -139,8 +140,13 @@ void calendar_ui_update(calendar_ui_t *ui, const calendar_model_t *model)
 
     add_month_grid(ui->screen, model);
 
-    lv_obj_t *offline = make_panel(ui->screen, 190, 254, 190, 32);
-    make_label_box(offline, "离线: RTC保时 缓存", 6, 2, 176, 28);
+    lv_obj_t *assistant = make_panel(ui->screen, 190, 254, 190, 32);
+    const char *assistant_text = model->assistant_error[0] != '\0' ? model->assistant_error : model->assistant_caption;
+    if (assistant_text[0] == '\0') {
+        assistant_text = model->assistant_active ? "等待语音结果" : "可按键语音输入";
+    }
+    snprintf(text, sizeof(text), "%s %s", model->assistant_state_text, assistant_text);
+    make_label_box(assistant, text, 6, 2, 176, 28);
 }
 
 void calendar_ui_create(calendar_ui_t *ui, const calendar_model_t *model)
