@@ -48,8 +48,8 @@ static lv_obj_t *make_bottom_status(lv_obj_t *parent)
 {
     lv_obj_t *bar = lv_obj_create(parent);
     lv_obj_remove_style_all(bar);
-    lv_obj_set_pos(bar, 10, 264);
-    lv_obj_set_size(bar, 380, 28);
+    lv_obj_set_pos(bar, 10, 258);
+    lv_obj_set_size(bar, 380, 34);
     lv_obj_set_style_bg_color(bar, lv_color_hex(0xffffff), 0);
     lv_obj_set_style_bg_opa(bar, LV_OPA_COVER, 0);
     lv_obj_set_style_border_color(bar, lv_color_hex(0x171717), 0);
@@ -104,23 +104,25 @@ static void calendar_draw_part_begin(lv_event_t *event)
     }
 
     if (lv_btnmatrix_has_btn_ctrl(button_matrix, draw->id, LV_BTNMATRIX_CTRL_CUSTOM_1)) {
-        draw->rect_dsc->bg_opa = LV_OPA_COVER;
-        draw->rect_dsc->bg_color = lv_color_hex(0x171717);
-        draw->rect_dsc->border_opa = LV_OPA_TRANSP;
+        draw->rect_dsc->bg_opa = LV_OPA_TRANSP;
+        draw->rect_dsc->border_opa = LV_OPA_COVER;
+        draw->rect_dsc->border_color = lv_color_hex(0x171717);
+        draw->rect_dsc->border_width = 1;
+        draw->rect_dsc->border_side = LV_BORDER_SIDE_FULL;
         draw->rect_dsc->radius = 3;
-        draw->label_dsc->color = lv_color_hex(0xffffff);
+        draw->label_dsc->color = lv_color_hex(0x171717);
     }
 }
 
 static void style_calendar_button_matrix(lv_obj_t *button_matrix)
 {
     lv_obj_remove_style_all(button_matrix);
-    lv_obj_set_size(button_matrix, 174, 158);
+    lv_obj_set_size(button_matrix, 168, 152);
     lv_obj_set_style_bg_opa(button_matrix, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(button_matrix, 0, 0);
     lv_obj_set_style_pad_all(button_matrix, 0, 0);
-    lv_obj_set_style_pad_row(button_matrix, 1, 0);
-    lv_obj_set_style_pad_column(button_matrix, 3, 0);
+    lv_obj_set_style_pad_row(button_matrix, 2, 0);
+    lv_obj_set_style_pad_column(button_matrix, 2, 0);
     lv_obj_set_style_text_font(button_matrix, &calendar_font_zh_16, 0);
     lv_obj_set_style_text_color(button_matrix, lv_color_hex(0x171717), LV_PART_ITEMS);
     lv_obj_set_style_text_color(button_matrix, lv_color_hex(0xffffff), LV_PART_ITEMS | LV_STATE_DISABLED);
@@ -136,17 +138,17 @@ static void add_month_calendar(lv_obj_t *parent, const calendar_model_t *model)
     static const char *weekdays[] = {"一", "二", "三", "四", "五", "六", "日"};
     char text[16];
 
-    lv_obj_t *panel = make_panel(parent, 190, 42, 190, 210);
+    lv_obj_t *panel = make_panel(parent, 198, 50, 184, 198);
     snprintf(text, sizeof(text), "%d 年 %d 月", model->year, model->month);
     make_label_box(panel, text, 8, 4, 120, 22);
     snprintf(text, sizeof(text), "%d周", calendar_model_iso_week(model->year, model->month, model->day));
-    lv_obj_t *week = make_label_box(panel, text, 138, 4, 44, 22);
+    lv_obj_t *week = make_label_box(panel, text, 134, 4, 42, 22);
     lv_obj_add_style(week, &g_theme.muted, 0);
 
     lv_obj_t *calendar = lv_calendar_create(panel);
     lv_obj_remove_style_all(calendar);
-    lv_obj_set_pos(calendar, 8, 32);
-    lv_obj_set_size(calendar, 174, 160);
+    lv_obj_set_pos(calendar, 8, 30);
+    lv_obj_set_size(calendar, 168, 154);
     lv_calendar_set_day_names(calendar, weekdays);
     lv_calendar_set_showed_date(calendar, (uint32_t)model->year, (uint32_t)model->month);
     lv_calendar_set_today_date(calendar, (uint32_t)model->year, (uint32_t)model->month, (uint32_t)model->day);
@@ -159,6 +161,7 @@ static void add_month_calendar(lv_obj_t *parent, const calendar_model_t *model)
 void calendar_ui_update(calendar_ui_t *ui, const calendar_model_t *model)
 {
     char text[96];
+    char event_text[96];
 
     lv_obj_clean(ui->screen);
 
@@ -183,26 +186,24 @@ void calendar_ui_update(calendar_ui_t *ui, const calendar_model_t *model)
     lv_obj_t *hint = make_label_box(ui->screen, model->day_hint, 21, 158, 154, 22);
     lv_obj_add_style(hint, &g_theme.muted, 0);
 
-    lv_obj_t *weather = make_panel(ui->screen, 18, 181, 154, 66);
+    lv_obj_t *weather = make_panel(ui->screen, 18, 181, 154, 70);
     snprintf(text, sizeof(text), "%s %s", model->city, model->weather_summary);
     make_label_box(weather, text, 8, 4, 138, 22);
     snprintf(text, sizeof(text), "湿%d%%", model->humidity_percent);
-    lv_obj_t *humidity = make_label_box(weather, text, 8, 24, 82, 20);
+    lv_obj_t *humidity = make_label_box(weather, text, 8, 24, 68, 20);
     lv_obj_add_style(humidity, &g_theme.muted, 0);
     snprintf(text, sizeof(text), "%d°C", model->temp_c);
-    lv_obj_t *temp = make_label_box(weather, text, 62, 20, 72, 34);
+    lv_obj_t *temp = make_label_box(weather, text, 82, 21, 56, 32);
     lv_obj_set_style_text_font(temp, &calendar_font_fusion_28, 0);
     lv_obj_set_style_text_align(temp, LV_TEXT_ALIGN_RIGHT, 0);
     snprintf(text, sizeof(text), "%d-%d°C", model->temp_low_c, model->temp_high_c);
-    lv_obj_t *summary = make_label_box(weather, text, 8, 42, 82, 20);
+    lv_obj_t *summary = make_label_box(weather, text, 8, 44, 76, 20);
     lv_obj_add_style(summary, &g_theme.muted, 0);
     snprintf(text, sizeof(text), "更新%s", model->weather_updated_at);
-    lv_obj_t *updated = make_label_box(weather, text, 92, 42, 54, 20);
+    lv_obj_t *updated = make_label_box(weather, text, 88, 44, 58, 20);
     lv_obj_add_style(updated, &g_theme.muted, 0);
 
-    snprintf(text, sizeof(text), "下一项 %s", model->next_event_text);
-    lv_obj_t *event = make_label_box(ui->screen, text, 18, 252, 164, 20);
-    lv_obj_add_style(event, &g_theme.muted, 0);
+    snprintf(event_text, sizeof(event_text), "下一项 %s", model->next_event_text);
 
     add_month_calendar(ui->screen, model);
 
@@ -212,7 +213,9 @@ void calendar_ui_update(calendar_ui_t *ui, const calendar_model_t *model)
         assistant_text = model->assistant_active ? "等待语音结果" : "可按键语音输入";
     }
     snprintf(text, sizeof(text), "%s %s", model->assistant_state_text, assistant_text);
-    make_label_box(assistant, text, 8, 3, 364, 22);
+    lv_obj_t *event = make_label_box(assistant, event_text, 8, 2, 364, 16);
+    lv_obj_add_style(event, &g_theme.muted, 0);
+    make_label_box(assistant, text, 8, 17, 364, 17);
 }
 
 void calendar_ui_create(calendar_ui_t *ui, const calendar_model_t *model)
