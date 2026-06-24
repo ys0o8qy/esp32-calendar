@@ -4,7 +4,6 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 UI_SOURCE = ROOT / "src/app/calendar_ui.c"
-THEME_SOURCE = ROOT / "src/app/calendar_theme.c"
 
 
 class CalendarUiLayoutTests(unittest.TestCase):
@@ -41,19 +40,19 @@ class CalendarUiLayoutTests(unittest.TestCase):
         self.assertIn("&calendar_font_fusion_28", source)
         self.assertNotIn("lv_font_montserrat", source)
 
-    def test_today_badge_has_opaque_background(self):
-        source = THEME_SOURCE.read_text(encoding="utf-8")
+    def test_today_badge_uses_outline_instead_of_heavy_fill(self):
+        source = UI_SOURCE.read_text(encoding="utf-8")
 
-        self.assertIn("lv_style_set_bg_opa(&theme->today, LV_OPA_COVER);", source)
-        self.assertIn("lv_style_set_pad_hor(&theme->today, 0);", source)
-        self.assertIn("lv_style_set_pad_top(&theme->today, 5);", source)
-        self.assertIn("lv_style_set_pad_bottom(&theme->today, 0);", source)
+        self.assertIn("draw->rect_dsc->bg_opa = LV_OPA_TRANSP;", source)
+        self.assertIn("draw->rect_dsc->border_side = LV_BORDER_SIDE_FULL;", source)
+        self.assertIn("draw->rect_dsc->border_width = 1;", source)
+        self.assertIn("draw->label_dsc->color = lv_color_hex(0x171717);", source)
 
     def test_temperature_label_keeps_bottom_padding(self):
         source = UI_SOURCE.read_text(encoding="utf-8")
 
         self.assertIn('snprintf(text, sizeof(text), "%d°C", model->temp_c);', source)
-        self.assertIn("make_label_box(weather, text, 62, 20, 72, 34)", source)
+        self.assertIn("make_label_box(weather, text, 82, 21, 56, 32)", source)
         self.assertIn("lv_obj_set_style_text_align(temp, LV_TEXT_ALIGN_RIGHT, 0);", source)
 
     def test_voice_assistant_status_uses_bottom_right_panel(self):
@@ -64,8 +63,10 @@ class CalendarUiLayoutTests(unittest.TestCase):
         self.assertIn("model->assistant_error", source)
         self.assertIn('assistant_text = model->assistant_active ? "等待语音结果" : "可按键语音输入";', source)
         self.assertIn("make_bottom_status(ui->screen)", source)
-        self.assertIn("lv_obj_set_pos(bar, 10, 264)", source)
-        self.assertIn("lv_obj_set_size(bar, 380, 28)", source)
+        self.assertIn("lv_obj_set_pos(bar, 10, 258)", source)
+        self.assertIn("lv_obj_set_size(bar, 380, 34)", source)
+        self.assertIn("make_label_box(assistant, event_text, 8, 2, 364, 16)", source)
+        self.assertIn("make_label_box(assistant, text, 8, 17, 364, 17)", source)
         self.assertNotIn("make_panel(ui->screen, 190, 254, 190, 32)", source)
 
     def test_top_status_is_short_and_weather_update_stays_with_weather(self):
@@ -78,10 +79,12 @@ class CalendarUiLayoutTests(unittest.TestCase):
     def test_calendar_reduces_visual_noise_for_secondary_dates_and_events(self):
         source = UI_SOURCE.read_text(encoding="utf-8")
 
+        self.assertIn("make_panel(parent, 198, 50, 184, 198)", source)
+        self.assertIn("lv_obj_set_size(button_matrix, 168, 152)", source)
         self.assertIn("LV_BORDER_SIDE_BOTTOM", source)
         self.assertIn("draw->rect_dsc->border_width = 2;", source)
-        self.assertIn("lv_color_hex(0xffffff)", source)
-        self.assertNotIn("draw->rect_dsc->border_width = 1;", source)
+        self.assertIn("LV_BORDER_SIDE_FULL", source)
+        self.assertIn("draw->rect_dsc->border_width = 1;", source)
 
 
 if __name__ == "__main__":
