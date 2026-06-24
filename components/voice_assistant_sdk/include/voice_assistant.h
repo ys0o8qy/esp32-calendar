@@ -13,6 +13,7 @@ typedef int esp_err_t;
 #define ESP_ERR_NO_MEM 0x101
 #define ESP_ERR_INVALID_ARG 0x102
 #define ESP_ERR_INVALID_STATE 0x103
+#define ESP_ERR_INVALID_SIZE 0x104
 #define ESP_ERR_NOT_SUPPORTED 0x106
 #endif
 
@@ -98,6 +99,12 @@ typedef struct {
 } voice_assistant_audio_port_t;
 
 typedef struct {
+    size_t (*estimate_samples)(void *ctx, const char *text);
+    esp_err_t (*synthesize)(void *ctx, const char *text, int16_t *pcm, size_t max_samples, size_t *written_samples);
+    void *ctx;
+} voice_assistant_tts_t;
+
+typedef struct {
     const char *name;
     const char *description;
     voice_assistant_tool_invoke_cb_t invoke;
@@ -112,6 +119,7 @@ typedef struct {
     void *user_ctx;
     voice_assistant_audio_port_t audio_port;
     voice_assistant_local_recognizer_t local_recognizer;
+    voice_assistant_tts_t tts;
     int sample_rate_hz;
     int frame_ms;
     size_t task_stack_size;
@@ -123,12 +131,14 @@ esp_err_t voice_assistant_stop(voice_assistant_handle_t handle);
 esp_err_t voice_assistant_listen(voice_assistant_handle_t handle, voice_assistant_listen_mode_t mode);
 esp_err_t voice_assistant_abort(voice_assistant_handle_t handle);
 esp_err_t voice_assistant_register_tool(voice_assistant_handle_t handle, const voice_assistant_tool_t *tool);
+esp_err_t voice_assistant_speak_text(voice_assistant_handle_t handle, const char *text);
 esp_err_t voice_assistant_poll_audio(voice_assistant_handle_t handle);
 esp_err_t voice_assistant_process_audio_frame(voice_assistant_handle_t handle, const int16_t *samples, size_t sample_count);
 voice_assistant_state_t voice_assistant_state(voice_assistant_handle_t handle);
 const char *voice_assistant_state_text(voice_assistant_state_t state);
 voice_assistant_audio_port_t voice_assistant_waveshare_rlcd_4_2_audio_port(void);
 voice_assistant_local_recognizer_t voice_assistant_esp_sr_local_recognizer(void);
+voice_assistant_tts_t voice_assistant_local_tts(void);
 
 #ifdef __cplusplus
 }

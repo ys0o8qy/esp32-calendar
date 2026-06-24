@@ -68,6 +68,10 @@ class ArchitectureContractTests(unittest.TestCase):
         self.assertIn("voice_assistant_sdk", cmake)
         self.assertIn("config VOICE_ASSISTANT_ENABLE", sdk_kconfig)
         self.assertIn("voice_assistant_register_tool", sdk_header)
+        self.assertIn("config VOICE_ASSISTANT_LOCAL_TTS", sdk_kconfig)
+        self.assertIn("voice_assistant_tts_t", sdk_header)
+        self.assertIn("voice_assistant_local_tts", main_source)
+        self.assertIn("voice_assistant_speak_text", main_source)
         self.assertNotIn("esp_websocket_client", main_source)
         self.assertNotIn("ES8311", main_source)
 

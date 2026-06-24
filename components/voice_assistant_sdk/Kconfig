@@ -58,6 +58,15 @@ config VOICE_ASSISTANT_WAKE_PHRASE_TEXT
     default "小王小王"
     depends on VOICE_ASSISTANT_ESP_SR_LOCAL_RECOGNIZER
 
+config VOICE_ASSISTANT_LOCAL_TTS
+    bool "Enable lightweight local TTS"
+    default y
+    depends on VOICE_ASSISTANT_ENABLE
+    help
+        Enable the built-in offline text-to-PCM synthesizer. Audible playback
+        still requires an audio port with speaker playback, such as the
+        Waveshare ES8311 codec port.
+
 config VOICE_ASSISTANT_DEFAULT_VOLUME
     int "Default speaker volume"
     default 70

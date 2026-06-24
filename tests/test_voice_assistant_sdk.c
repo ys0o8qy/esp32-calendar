@@ -26,7 +26,11 @@ typedef struct {
     int start_count;
     int stop_count;
     int read_count;
+    int play_count;
+    int stop_playback_count;
     int16_t samples[32];
+    int16_t played_samples[128];
+    size_t played_sample_count;
     int read_result;
 } scripted_audio_port_t;
 
@@ -76,12 +80,37 @@ static int scripted_audio_read_pcm(void *ctx, int16_t *samples, size_t sample_co
     return (int)count;
 }
 
+static esp_err_t scripted_audio_play_pcm(void *ctx, const int16_t *samples, size_t sample_count)
+{
+    scripted_audio_port_t *audio = (scripted_audio_port_t *)ctx;
+    audio->play_count++;
+
+    size_t count = sample_count;
+    if (count > sizeof(audio->played_samples) / sizeof(audio->played_samples[0])) {
+        count = sizeof(audio->played_samples) / sizeof(audio->played_samples[0]);
+    }
+    for (size_t i = 0; i < count; i++) {
+        audio->played_samples[i] = samples[i];
+    }
+    audio->played_sample_count = count;
+    return ESP_OK;
+}
+
+static esp_err_t scripted_audio_stop_playback(void *ctx)
+{
+    scripted_audio_port_t *audio = (scripted_audio_port_t *)ctx;
+    audio->stop_playback_count++;
+    return ESP_OK;
+}
+
 static voice_assistant_audio_port_t make_scripted_audio_port(scripted_audio_port_t *audio)
 {
     voice_assistant_audio_port_t port = {
         .start_recording = scripted_audio_start_recording,
         .stop_recording = scripted_audio_stop_recording,
         .read_pcm = scripted_audio_read_pcm,
+        .play_pcm = scripted_audio_play_pcm,
+        .stop_playback = scripted_audio_stop_playback,
         .ctx = audio,
     };
     return port;
@@ -375,6 +404,43 @@ static void test_audio_poll_feeds_captured_pcm_to_local_recognizer(void)
     assert(voice_assistant_stop(assistant) == ESP_OK);
 }
 
+static void test_speak_text_requires_local_tts_capability(void)
+{
+    event_log_t log = {0};
+    scripted_audio_port_t audio = {0};
+    voice_assistant_config_t config = make_config(&log);
+    config.audio_port = make_scripted_audio_port(&audio);
+    voice_assistant_handle_t assistant = voice_assistant_start(&config);
+
+    assert(assistant != NULL);
+    assert(voice_assistant_speak_text(assistant, "本地播报") == ESP_ERR_NOT_SUPPORTED);
+    assert(audio.play_count == 0);
+
+    assert(voice_assistant_stop(assistant) == ESP_OK);
+}
+
+static void test_speak_text_synthesizes_local_tts_and_plays_pcm(void)
+{
+    event_log_t log = {0};
+    scripted_audio_port_t audio = {0};
+    voice_assistant_config_t config = make_config(&log);
+    config.audio_port = make_scripted_audio_port(&audio);
+    config.tts = voice_assistant_local_tts();
+    voice_assistant_handle_t assistant = voice_assistant_start(&config);
+
+    assert(assistant != NULL);
+    assert(voice_assistant_speak_text(assistant, "本地播报") == ESP_OK);
+
+    assert(audio.play_count == 1);
+    assert(audio.stop_playback_count == 1);
+    assert(audio.played_sample_count > 0);
+    assert(log.events[2] == VOICE_ASSISTANT_EVENT_SPEAKING);
+    assert(log.events[3] == VOICE_ASSISTANT_EVENT_IDLE);
+    assert(voice_assistant_state(assistant) == VOICE_ASSISTANT_STATE_IDLE);
+
+    assert(voice_assistant_stop(assistant) == ESP_OK);
+}
+
 static void test_tool_registration_requires_name_and_callback(void)
 {
     event_log_t log = {0};
@@ -405,6 +471,8 @@ int main(void)
     test_local_wake_word_detection_starts_wake_word_listening();
     test_local_command_detection_emits_transcript_without_backend_asr();
     test_audio_poll_feeds_captured_pcm_to_local_recognizer();
+    test_speak_text_requires_local_tts_capability();
+    test_speak_text_synthesizes_local_tts_and_plays_pcm();
     test_tool_registration_requires_name_and_callback();
     puts("voice_assistant_sdk tests passed");
     return 0;

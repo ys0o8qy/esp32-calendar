@@ -90,6 +90,21 @@ static const char *assistant_token_provider(void *user_ctx)
     return "";
 }
 
+static void assistant_speak_text(const char *text)
+{
+#if CONFIG_VOICE_ASSISTANT_LOCAL_TTS
+    if (g_assistant == NULL || text == NULL || text[0] == '\0') {
+        return;
+    }
+    esp_err_t ret = voice_assistant_speak_text(g_assistant, text);
+    if (ret != ESP_OK && ret != ESP_ERR_NOT_SUPPORTED) {
+        ESP_LOGW(TAG, "Local TTS playback failed: %d", ret);
+    }
+#else
+    (void)text;
+#endif
+}
+
 static void assistant_start(void)
 {
 #if CONFIG_VOICE_ASSISTANT_ESP_SR_LOCAL_RECOGNIZER
@@ -116,6 +131,9 @@ static void assistant_start(void)
         .audio_port = voice_assistant_waveshare_rlcd_4_2_audio_port(),
 #if CONFIG_VOICE_ASSISTANT_ESP_SR_LOCAL_RECOGNIZER
         .local_recognizer = voice_assistant_esp_sr_local_recognizer(),
+#endif
+#if CONFIG_VOICE_ASSISTANT_LOCAL_TTS
+        .tts = voice_assistant_local_tts(),
 #endif
         .sample_rate_hz = 16000,
         .frame_ms = 60,
@@ -161,8 +179,11 @@ static void assistant_drain_events(void)
             g_assistant_snapshot.error[0] = '\0';
             break;
         case VOICE_ASSISTANT_EVENT_TRANSCRIPT_DELTA:
+            copy_text(g_assistant_snapshot.caption, sizeof(g_assistant_snapshot.caption), msg.text);
+            break;
         case VOICE_ASSISTANT_EVENT_ASSISTANT_TEXT:
             copy_text(g_assistant_snapshot.caption, sizeof(g_assistant_snapshot.caption), msg.text);
+            assistant_speak_text(msg.text);
             break;
         case VOICE_ASSISTANT_EVENT_ERROR:
             g_assistant_snapshot.active = false;

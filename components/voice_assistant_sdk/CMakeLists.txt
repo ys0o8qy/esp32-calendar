@@ -3,12 +3,13 @@ set(VOICE_ASSISTANT_SRCS
     "src/voice_state.c"
     "src/voice_protocol.c"
     "src/voice_audio.c"
+    "src/voice_tts.c"
     "src/voice_transport_ws.c"
     "src/voice_board_waveshare_rlcd_4_2.c"
     "src/voice_esp_sr_local.c"
 )
 set(VOICE_ASSISTANT_PRIV_INCLUDE_DIRS "src")
-set(VOICE_ASSISTANT_REQUIRES esp_timer)
+set(VOICE_ASSISTANT_REQUIRES esp_timer local_tts)
 set(VOICE_ASSISTANT_EMBED_TXTFILES "")
 
 if(CONFIG_VOICE_ASSISTANT_WAVESHARE_CODEC_PORT)
