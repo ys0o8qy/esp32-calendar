@@ -21,6 +21,16 @@ static void test_status_text_mentions_connectivity_and_cache(void)
     assert(strstr(buffer, "82%") != NULL);
 }
 
+static void test_sample_model_initializes_voice_assistant_fields(void)
+{
+    calendar_model_t model = calendar_model_sample();
+
+    assert(model.assistant_active == false);
+    assert(strcmp(model.assistant_state_text, "语音待机") == 0);
+    assert(strcmp(model.assistant_caption, "") == 0);
+    assert(strcmp(model.assistant_error, "") == 0);
+}
+
 static void test_month_grid_marks_today_and_events(void)
 {
     calendar_model_t model = calendar_model_sample();
@@ -86,6 +96,7 @@ static void test_iso_week_number_handles_year_boundaries(void)
 int main(void)
 {
     test_status_text_mentions_connectivity_and_cache();
+    test_sample_model_initializes_voice_assistant_fields();
     test_month_grid_marks_today_and_events();
     test_month_grid_uses_adjacent_month_days();
     test_month_grid_keeps_sixth_week_for_long_months();

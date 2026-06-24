@@ -31,7 +31,7 @@ LARGE_FONT_VARIANTS = [
         "output": ROOT / "src/app/calendar_font_fusion_28.c",
         "size": 28,
         "name": "calendar_font_fusion_28",
-        "symbols": "0123456789-C",
+        "symbols": "0123456789-°C",
     },
 ]
 REQUIRED_ASCII_CHARS = (

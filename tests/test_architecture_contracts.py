@@ -20,6 +20,57 @@ class ArchitectureContractTests(unittest.TestCase):
         self.assertNotIn("calendar_model_sample()", platform_source)
         self.assertNotIn("will feed calendar_model_t here", platform_source)
 
+    def test_esp32_platform_initializes_live_time_and_sensor_providers(self):
+        platform_source = (ROOT / "src/platform/esp32/calendar_platform.c").read_text(encoding="utf-8")
+        kconfig = (ROOT / "main/Kconfig.projbuild").read_text(encoding="utf-8")
+        cmake = (ROOT / "main/CMakeLists.txt").read_text(encoding="utf-8")
+
+        self.assertIn("CONFIG_CALENDAR_WIFI_SSID", platform_source)
+        self.assertIn("esp_wifi_start", platform_source)
+        self.assertIn("esp_netif_sntp_init", platform_source)
+        self.assertIn("esp_netif_sntp_sync_wait", platform_source)
+        self.assertIn("SHTC3_I2C_ADDRESS", platform_source)
+        self.assertIn("i2c_master_transmit_receive", platform_source)
+        self.assertIn("CALENDAR_WIFI_SSID", kconfig)
+        self.assertIn("CALENDAR_WIFI_PASSWORD", kconfig)
+        self.assertIn("CALENDAR_SNTP_SERVER", kconfig)
+        self.assertIn("esp_wifi", cmake)
+        self.assertIn("esp_netif", cmake)
+
+    def test_shtc3_i2c_timing_matches_waveshare_reference(self):
+        platform_source = (ROOT / "src/platform/esp32/calendar_platform.c").read_text(encoding="utf-8")
+
+        self.assertIn("#define SHTC3_WAKE_DELAY_MS 50", platform_source)
+        self.assertIn("#define SHTC3_MEASURE_DELAY_MS 20", platform_source)
+        self.assertIn("#define CALENDAR_I2C_DATA_TIMEOUT_MS 5000", platform_source)
+        self.assertIn("#define CALENDAR_I2C_DONE_TIMEOUT_MS 1000", platform_source)
+        self.assertIn("i2c_master_bus_wait_all_done(g_i2c_bus", platform_source)
+        self.assertIn("vTaskDelay(pdMS_TO_TICKS(SHTC3_WAKE_DELAY_MS));", platform_source)
+        self.assertIn("vTaskDelay(pdMS_TO_TICKS(SHTC3_MEASURE_DELAY_MS));", platform_source)
+        self.assertNotIn("pdMS_TO_TICKS(2)", platform_source)
+
+    def test_shtc3_init_probe_failure_keeps_platform_bootable(self):
+        platform_source = (ROOT / "src/platform/esp32/calendar_platform.c").read_text(encoding="utf-8")
+
+        self.assertIn("static void calendar_probe_shtc3(void)", platform_source)
+        self.assertIn("calendar_probe_shtc3();", platform_source)
+        self.assertIn("SHTC3 init probe failed", platform_source)
+        self.assertNotIn("ESP_RETURN_ON_ERROR(calendar_shtc3_wake(), TAG, \"SHTC3 wake failed during init\")", platform_source)
+
+    def test_voice_assistant_sdk_is_a_separate_component(self):
+        main_source = (ROOT / "main/main.c").read_text(encoding="utf-8")
+        cmake = (ROOT / "main/CMakeLists.txt").read_text(encoding="utf-8")
+        sdk_header = (ROOT / "components/voice_assistant_sdk/include/voice_assistant.h").read_text(encoding="utf-8")
+        sdk_kconfig = (ROOT / "components/voice_assistant_sdk/Kconfig").read_text(encoding="utf-8")
+
+        self.assertIn('#include "voice_assistant.h"', main_source)
+        self.assertIn("voice_assistant_start", main_source)
+        self.assertIn("voice_assistant_sdk", cmake)
+        self.assertIn("config VOICE_ASSISTANT_ENABLE", sdk_kconfig)
+        self.assertIn("voice_assistant_register_tool", sdk_header)
+        self.assertNotIn("esp_websocket_client", main_source)
+        self.assertNotIn("ES8311", main_source)
+
     def test_dev_verify_renders_after_optional_esp32_build(self):
         script = (ROOT / "scripts/dev-verify.sh").read_text(encoding="utf-8")
 

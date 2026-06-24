@@ -38,6 +38,10 @@ typedef struct {
     bool ntp_synced;
     const char *weather_updated_at;
     const char *next_event_text;
+    const char *assistant_state_text;
+    const char *assistant_caption;
+    const char *assistant_error;
+    bool assistant_active;
     int event_days[CALENDAR_MAX_EVENTS];
     size_t event_day_count;
 } calendar_model_t;

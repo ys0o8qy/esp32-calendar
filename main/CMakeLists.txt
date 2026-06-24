@@ -17,8 +17,12 @@ idf_component_register(
     REQUIRES
         driver
         esp_lcd
+        esp_netif
         esp_psram
         esp_timer
+        esp_wifi
         lvgl
+        nvs_flash
         spi_flash
+        voice_assistant_sdk
 )

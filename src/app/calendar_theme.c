@@ -29,8 +29,10 @@ void calendar_theme_init(calendar_theme_t *theme)
 
     lv_style_init(&theme->today);
     lv_style_set_bg_color(&theme->today, lv_color_hex(0x171717));
+    lv_style_set_bg_opa(&theme->today, LV_OPA_COVER);
     lv_style_set_text_color(&theme->today, lv_color_hex(0xffffff));
     lv_style_set_radius(&theme->today, 3);
-    lv_style_set_pad_hor(&theme->today, 2);
-    lv_style_set_pad_ver(&theme->today, 0);
+    lv_style_set_pad_hor(&theme->today, 0);
+    lv_style_set_pad_top(&theme->today, 5);
+    lv_style_set_pad_bottom(&theme->today, 0);
 }

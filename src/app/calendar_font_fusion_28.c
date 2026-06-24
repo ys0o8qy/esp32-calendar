@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 28 px
  * Bpp: 1
- * Opts: --no-compress --no-prefilter --bpp 1 --size 28 --font assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf --symbols 0123456789-C --format lvgl -o src/app/calendar_font_fusion_28.c --lv-include calendar_font_zh.h --lv-font-name calendar_font_fusion_28 --force-fast-kern-format
+ * Opts: --no-compress --no-prefilter --bpp 1 --size 28 --font assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf --symbols 0123456789-°C --format lvgl -o src/app/calendar_font_fusion_28.c --lv-include calendar_font_zh.h --lv-font-name calendar_font_fusion_28 --force-fast-kern-format
  ******************************************************************************/
 
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
@@ -88,7 +88,10 @@ static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
     0x1f, 0x83, 0xf0, 0x7e, 0x70, 0x3e, 0x7, 0xc0,
     0xf8, 0x7, 0x0, 0xe0, 0x1c, 0x3, 0x80, 0x70,
     0xe, 0x1, 0xc0, 0x38, 0x1f, 0x3, 0xe0, 0x63,
-    0xf0, 0x7e, 0xf, 0xc0
+    0xf0, 0x7e, 0xf, 0xc0,
+
+    /* U+00B0 "°" */
+    0x1c, 0x1c, 0xe3, 0xe3, 0xe3, 0x1c, 0x1c, 0x1c
 };
 
 
@@ -109,25 +112,25 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
     {.bitmap_index = 193, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
     {.bitmap_index = 221, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
     {.bitmap_index = 249, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
-    {.bitmap_index = 277, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0}
+    {.bitmap_index = 277, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
+    {.bitmap_index = 305, .adv_w = 224, .box_w = 8, .box_h = 8, .ofs_x = 3, .ofs_y = 14}
 };
 
 /*---------------------
  *  CHARACTER MAPPING
  *--------------------*/
 
-static const uint8_t glyph_id_ofs_list_0[] = {
-    0, 0, 0, 1, 2, 3, 4, 5,
-    6, 7, 8, 9, 10, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 11
+static const uint16_t unicode_list_0[] = {
+    0x0, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9,
+    0xa, 0xb, 0xc, 0x16, 0x83
 };
 
 /*Collect the unicode lists and glyph_id offsets*/
 static const lv_font_fmt_txt_cmap_t cmaps[] =
 {
     {
-        .range_start = 45, .range_length = 23, .glyph_id_start = 1,
-        .unicode_list = NULL, .glyph_id_ofs_list = glyph_id_ofs_list_0, .list_length = 23, .type = LV_FONT_FMT_TXT_CMAP_FORMAT0_FULL
+        .range_start = 45, .range_length = 132, .glyph_id_start = 1,
+        .unicode_list = unicode_list_0, .glyph_id_ofs_list = NULL, .list_length = 13, .type = LV_FONT_FMT_TXT_CMAP_SPARSE_TINY
     }
 };
 
@@ -175,7 +178,7 @@ lv_font_t calendar_font_fusion_28 = {
 #endif
     .get_glyph_dsc = lv_font_get_glyph_dsc_fmt_txt,    /*Function pointer to get glyph's data*/
     .get_glyph_bitmap = lv_font_get_bitmap_fmt_txt,    /*Function pointer to get glyph's bitmap*/
-    .line_height = 20,          /*The maximum line height required by the font*/
+    .line_height = 22,          /*The maximum line height required by the font*/
     .base_line = 0,             /*Baseline measured from the bottom of the line*/
 #if !(LVGL_VERSION_MAJOR == 6 && LVGL_VERSION_MINOR == 0)
     .subpx = LV_FONT_SUBPX_NONE,
