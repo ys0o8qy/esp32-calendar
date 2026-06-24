@@ -1,5 +1,10 @@
 # Project Agent Workflow
 
+Prefer existing LVGL widgets/components before custom UI components. Check the
+vendored LVGL widget set first; only implement a custom component when LVGL does
+not provide an appropriate widget or when the built-in widget cannot satisfy the
+RLCD layout after styling.
+
 After any code change or compile/build verification in this repository, run the
 RLCD render check before reporting the work as complete.
 

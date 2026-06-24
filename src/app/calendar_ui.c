@@ -8,6 +8,7 @@
 
 static calendar_theme_t g_theme;
 static bool g_theme_initialized;
+static lv_calendar_date_t g_highlighted_dates[CALENDAR_MAX_EVENTS];
 
 static void ensure_theme(void)
 {
@@ -43,49 +44,116 @@ static lv_obj_t *make_panel(lv_obj_t *parent, int x, int y, int w, int h)
     return panel;
 }
 
-static void add_month_grid(lv_obj_t *parent, const calendar_model_t *model)
+static lv_obj_t *make_bottom_status(lv_obj_t *parent)
+{
+    lv_obj_t *bar = lv_obj_create(parent);
+    lv_obj_remove_style_all(bar);
+    lv_obj_set_pos(bar, 10, 264);
+    lv_obj_set_size(bar, 380, 28);
+    lv_obj_set_style_bg_color(bar, lv_color_hex(0xffffff), 0);
+    lv_obj_set_style_bg_opa(bar, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_color(bar, lv_color_hex(0x171717), 0);
+    lv_obj_set_style_border_width(bar, 1, 0);
+    lv_obj_set_style_border_side(bar, LV_BORDER_SIDE_TOP, 0);
+    lv_obj_set_style_pad_all(bar, 0, 0);
+    return bar;
+}
+
+static uint16_t collect_highlighted_dates(const calendar_model_t *model)
+{
+    size_t count = model->event_day_count;
+    if (count > CALENDAR_MAX_EVENTS) {
+        count = CALENDAR_MAX_EVENTS;
+    }
+
+    uint16_t date_count = 0;
+    for (size_t i = 0; i < count; i++) {
+        int day = model->event_days[i];
+        if (day < 1 || day > 31) {
+            continue;
+        }
+        g_highlighted_dates[date_count].year = (uint16_t)model->year;
+        g_highlighted_dates[date_count].month = (int8_t)model->month;
+        g_highlighted_dates[date_count].day = (int8_t)day;
+        date_count++;
+    }
+    return date_count;
+}
+
+static void calendar_draw_part_begin(lv_event_t *event)
+{
+    lv_obj_t *button_matrix = lv_event_get_target(event);
+    lv_obj_draw_part_dsc_t *draw = lv_event_get_param(event);
+    if (draw->part != LV_PART_ITEMS) {
+        return;
+    }
+
+    draw->rect_dsc->bg_opa = LV_OPA_TRANSP;
+    draw->rect_dsc->border_opa = LV_OPA_TRANSP;
+    if (draw->id < 7) {
+        draw->label_dsc->color = lv_color_hex(0x5a5a54);
+    } else if (lv_btnmatrix_has_btn_ctrl(button_matrix, draw->id, LV_BTNMATRIX_CTRL_DISABLED)) {
+        draw->label_dsc->color = lv_color_hex(0xffffff);
+    }
+
+    if (lv_btnmatrix_has_btn_ctrl(button_matrix, draw->id, LV_BTNMATRIX_CTRL_CUSTOM_2)) {
+        draw->rect_dsc->border_opa = LV_OPA_COVER;
+        draw->rect_dsc->border_color = lv_color_hex(0x171717);
+        draw->rect_dsc->border_width = 2;
+        draw->rect_dsc->border_side = LV_BORDER_SIDE_BOTTOM;
+    }
+
+    if (lv_btnmatrix_has_btn_ctrl(button_matrix, draw->id, LV_BTNMATRIX_CTRL_CUSTOM_1)) {
+        draw->rect_dsc->bg_opa = LV_OPA_COVER;
+        draw->rect_dsc->bg_color = lv_color_hex(0x171717);
+        draw->rect_dsc->border_opa = LV_OPA_TRANSP;
+        draw->rect_dsc->radius = 3;
+        draw->label_dsc->color = lv_color_hex(0xffffff);
+    }
+}
+
+static void style_calendar_button_matrix(lv_obj_t *button_matrix)
+{
+    lv_obj_remove_style_all(button_matrix);
+    lv_obj_set_size(button_matrix, 174, 158);
+    lv_obj_set_style_bg_opa(button_matrix, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(button_matrix, 0, 0);
+    lv_obj_set_style_pad_all(button_matrix, 0, 0);
+    lv_obj_set_style_pad_row(button_matrix, 1, 0);
+    lv_obj_set_style_pad_column(button_matrix, 3, 0);
+    lv_obj_set_style_text_font(button_matrix, &calendar_font_zh_16, 0);
+    lv_obj_set_style_text_color(button_matrix, lv_color_hex(0x171717), LV_PART_ITEMS);
+    lv_obj_set_style_text_color(button_matrix, lv_color_hex(0xffffff), LV_PART_ITEMS | LV_STATE_DISABLED);
+    lv_obj_set_style_bg_opa(button_matrix, LV_OPA_TRANSP, LV_PART_ITEMS);
+    lv_obj_set_style_border_opa(button_matrix, LV_OPA_TRANSP, LV_PART_ITEMS);
+    lv_obj_set_style_pad_all(button_matrix, 0, LV_PART_ITEMS);
+    lv_obj_set_style_radius(button_matrix, 3, LV_PART_ITEMS);
+    lv_obj_add_event_cb(button_matrix, calendar_draw_part_begin, LV_EVENT_DRAW_PART_BEGIN, NULL);
+}
+
+static void add_month_calendar(lv_obj_t *parent, const calendar_model_t *model)
 {
     static const char *weekdays[] = {"一", "二", "三", "四", "五", "六", "日"};
-    calendar_month_grid_t grid;
     char text[16];
 
-    calendar_model_month_grid(model, &grid);
-
-    lv_obj_t *panel = make_panel(parent, 190, 45, 190, 201);
+    lv_obj_t *panel = make_panel(parent, 190, 42, 190, 210);
     snprintf(text, sizeof(text), "%d 年 %d 月", model->year, model->month);
     make_label_box(panel, text, 8, 4, 120, 22);
     snprintf(text, sizeof(text), "%d周", calendar_model_iso_week(model->year, model->month, model->day));
     lv_obj_t *week = make_label_box(panel, text, 138, 4, 44, 22);
     lv_obj_add_style(week, &g_theme.muted, 0);
 
-    for (int col = 0; col < CALENDAR_WEEK_DAYS; col++) {
-        lv_obj_t *label = make_label_box(panel, weekdays[col], 9 + col * 25, 36, 22, 22);
-        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
-        lv_obj_add_style(label, &g_theme.muted, 0);
-    }
+    lv_obj_t *calendar = lv_calendar_create(panel);
+    lv_obj_remove_style_all(calendar);
+    lv_obj_set_pos(calendar, 8, 32);
+    lv_obj_set_size(calendar, 174, 160);
+    lv_calendar_set_day_names(calendar, weekdays);
+    lv_calendar_set_showed_date(calendar, (uint32_t)model->year, (uint32_t)model->month);
+    lv_calendar_set_today_date(calendar, (uint32_t)model->year, (uint32_t)model->month, (uint32_t)model->day);
+    lv_calendar_set_highlighted_dates(calendar, g_highlighted_dates, collect_highlighted_dates(model));
 
-    for (int row = 0; row < CALENDAR_WEEK_ROWS; row++) {
-        for (int col = 0; col < CALENDAR_WEEK_DAYS; col++) {
-            calendar_day_cell_t *cell = &grid.cells[row][col];
-            snprintf(text, sizeof(text), "%d", cell->day);
-            lv_obj_t *label = make_label_box(panel, text, 9 + col * 25, 58 + row * 20, 22, 19);
-            lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
-            if (!cell->in_current_month) {
-                lv_obj_add_style(label, &g_theme.muted, 0);
-            }
-            if (cell->is_today) {
-                lv_obj_add_style(label, &g_theme.today, 0);
-            }
-            if (cell->has_event) {
-                lv_obj_t *dot = lv_obj_create(panel);
-                lv_obj_remove_style_all(dot);
-                lv_obj_set_style_bg_color(dot, lv_color_hex(0x171717), 0);
-                lv_obj_set_style_radius(dot, LV_RADIUS_CIRCLE, 0);
-                lv_obj_set_size(dot, 4, 4);
-                lv_obj_set_pos(dot, 18 + col * 25, 73 + row * 20);
-            }
-        }
-    }
+    lv_obj_t *button_matrix = lv_calendar_get_btnmatrix(calendar);
+    style_calendar_button_matrix(button_matrix);
 }
 
 void calendar_ui_update(calendar_ui_t *ui, const calendar_model_t *model)
@@ -97,12 +165,11 @@ void calendar_ui_update(calendar_ui_t *ui, const calendar_model_t *model)
     snprintf(
         text,
         sizeof(text),
-        "Wi-Fi%s NTP%s 天气%s 电%d%%",
-        model->wifi_connected ? "已连" : "离线",
-        model->ntp_synced ? "同步" : "未同",
-        model->weather_updated_at,
+        "Wi-Fi%s · NTP%s · 电%d%%",
+        model->wifi_connected ? "" : "离线",
+        model->ntp_synced ? "" : "未同",
         model->battery_percent);
-    lv_obj_t *status = make_label_box(ui->screen, text, 10, 8, 380, 22);
+    lv_obj_t *status = make_label_box(ui->screen, text, 10, 8, 190, 22);
     lv_obj_add_style(status, &g_theme.muted, 0);
 
     snprintf(text, sizeof(text), "%s  %d月%d日", model->weekday_text, model->month, model->day);
@@ -129,24 +196,23 @@ void calendar_ui_update(calendar_ui_t *ui, const calendar_model_t *model)
     snprintf(text, sizeof(text), "%d-%d°C", model->temp_low_c, model->temp_high_c);
     lv_obj_t *summary = make_label_box(weather, text, 8, 42, 82, 20);
     lv_obj_add_style(summary, &g_theme.muted, 0);
+    snprintf(text, sizeof(text), "更新%s", model->weather_updated_at);
+    lv_obj_t *updated = make_label_box(weather, text, 92, 42, 54, 20);
+    lv_obj_add_style(updated, &g_theme.muted, 0);
 
-    lv_obj_t *event = lv_obj_create(ui->screen);
-    lv_obj_remove_style_all(event);
-    lv_obj_add_style(event, &g_theme.inverse, 0);
-    lv_obj_set_pos(event, 18, 254);
-    lv_obj_set_size(event, 154, 32);
     snprintf(text, sizeof(text), "下一项 %s", model->next_event_text);
-    make_label_box(event, text, 8, 2, 138, 28);
+    lv_obj_t *event = make_label_box(ui->screen, text, 18, 252, 164, 20);
+    lv_obj_add_style(event, &g_theme.muted, 0);
 
-    add_month_grid(ui->screen, model);
+    add_month_calendar(ui->screen, model);
 
-    lv_obj_t *assistant = make_panel(ui->screen, 190, 254, 190, 32);
+    lv_obj_t *assistant = make_bottom_status(ui->screen);
     const char *assistant_text = model->assistant_error[0] != '\0' ? model->assistant_error : model->assistant_caption;
     if (assistant_text[0] == '\0') {
         assistant_text = model->assistant_active ? "等待语音结果" : "可按键语音输入";
     }
     snprintf(text, sizeof(text), "%s %s", model->assistant_state_text, assistant_text);
-    make_label_box(assistant, text, 6, 2, 176, 28);
+    make_label_box(assistant, text, 8, 3, 364, 22);
 }
 
 void calendar_ui_create(calendar_ui_t *ui, const calendar_model_t *model)

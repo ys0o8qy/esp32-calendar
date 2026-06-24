@@ -21,6 +21,9 @@
 #define LV_USE_IMG 1
 #define LV_USE_LINE 1
 #define LV_USE_ARC 1
+#define LV_USE_BTNMATRIX 1
 #define LV_USE_BTN 1
+#define LV_USE_CALENDAR 1
+#define LV_CALENDAR_WEEK_STARTS_MONDAY 1
 
 #endif
