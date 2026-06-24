@@ -81,6 +81,23 @@ class ArchitectureContractTests(unittest.TestCase):
         self.assertGreater(render_position, -1)
         self.assertGreater(render_position, build_position)
 
+    def test_project_prefers_lvgl_widgets_before_custom_components(self):
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        ui_source = (ROOT / "src/app/calendar_ui.c").read_text(encoding="utf-8")
+        model_header = (ROOT / "src/app/calendar_model.h").read_text(encoding="utf-8")
+        model_source = (ROOT / "src/app/calendar_model.c").read_text(encoding="utf-8")
+        sdkconfig_defaults = (ROOT / "sdkconfig.defaults").read_text(encoding="utf-8")
+        sim_conf = (ROOT / "sim/lv_conf.h").read_text(encoding="utf-8")
+
+        self.assertIn("Prefer existing LVGL widgets/components before custom UI components.", agents)
+        self.assertIn("lv_calendar_create", ui_source)
+        self.assertNotIn("calendar_model_month_grid", model_header)
+        self.assertNotIn("calendar_model_month_grid", model_source)
+        self.assertIn("CONFIG_LV_USE_BTNMATRIX=y", sdkconfig_defaults)
+        self.assertIn("CONFIG_LV_USE_CALENDAR=y", sdkconfig_defaults)
+        self.assertIn("#define LV_USE_BTNMATRIX 1", sim_conf)
+        self.assertIn("#define LV_USE_CALENDAR 1", sim_conf)
+
     def test_python_bytecode_is_removed_and_ignored(self):
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
         result = subprocess.run(
