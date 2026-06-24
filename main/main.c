@@ -52,6 +52,8 @@ static const char *assistant_state_label(voice_assistant_event_type_t type)
     case VOICE_ASSISTANT_EVENT_CONNECTED:
     case VOICE_ASSISTANT_EVENT_IDLE:
         return "语音待机";
+    case VOICE_ASSISTANT_EVENT_WAKE_WORD:
+        return "已唤醒";
     case VOICE_ASSISTANT_EVENT_LISTENING:
         return "正在聆听";
     case VOICE_ASSISTANT_EVENT_THINKING:
@@ -90,8 +92,13 @@ static const char *assistant_token_provider(void *user_ctx)
 
 static void assistant_start(void)
 {
-    if (CONFIG_VOICE_ASSISTANT_BACKEND_URL[0] == '\0') {
-        ESP_LOGW(TAG, "Voice assistant disabled because backend URL is empty");
+#if CONFIG_VOICE_ASSISTANT_ESP_SR_LOCAL_RECOGNIZER
+    bool has_local_recognizer = true;
+#else
+    bool has_local_recognizer = false;
+#endif
+    if (CONFIG_VOICE_ASSISTANT_BACKEND_URL[0] == '\0' && !has_local_recognizer) {
+        ESP_LOGW(TAG, "Voice assistant disabled because backend URL is empty and local recognizer is disabled");
         return;
     }
 
@@ -107,6 +114,9 @@ static void assistant_start(void)
         .token_provider = assistant_token_provider,
         .event_cb = assistant_event_cb,
         .audio_port = voice_assistant_waveshare_rlcd_4_2_audio_port(),
+#if CONFIG_VOICE_ASSISTANT_ESP_SR_LOCAL_RECOGNIZER
+        .local_recognizer = voice_assistant_esp_sr_local_recognizer(),
+#endif
         .sample_rate_hz = 16000,
         .frame_ms = 60,
         .task_stack_size = 4096,
@@ -116,7 +126,13 @@ static void assistant_start(void)
     g_assistant = voice_assistant_start(&config);
     if (g_assistant == NULL) {
         ESP_LOGE(TAG, "Voice assistant start failed");
+        return;
     }
+#if CONFIG_VOICE_ASSISTANT_ESP_SR_LOCAL_RECOGNIZER
+    if (voice_assistant_listen(g_assistant, VOICE_ASSISTANT_LISTEN_WAKE_WORD) != ESP_OK) {
+        ESP_LOGE(TAG, "Voice assistant wake-word listen failed");
+    }
+#endif
 }
 
 static void assistant_drain_events(void)
@@ -133,6 +149,11 @@ static void assistant_drain_events(void)
         }
 
         switch (msg.type) {
+        case VOICE_ASSISTANT_EVENT_WAKE_WORD:
+            g_assistant_snapshot.active = true;
+            g_assistant_snapshot.error[0] = '\0';
+            copy_text(g_assistant_snapshot.caption, sizeof(g_assistant_snapshot.caption), msg.text);
+            break;
         case VOICE_ASSISTANT_EVENT_LISTENING:
         case VOICE_ASSISTANT_EVENT_THINKING:
         case VOICE_ASSISTANT_EVENT_SPEAKING:
