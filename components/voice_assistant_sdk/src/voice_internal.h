@@ -3,6 +3,12 @@
 #include "voice_assistant.h"
 
 #include <stddef.h>
+#include <stdbool.h>
+
+#ifdef ESP_PLATFORM
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#endif
 
 #define VOICE_ASSISTANT_MAX_TOOLS 4
 #define VOICE_ASSISTANT_MAX_TEXT 96
@@ -15,7 +21,14 @@ struct voice_assistant {
     char backend_url[128];
     char device_id[64];
     char last_text[VOICE_ASSISTANT_MAX_TEXT];
+    char last_wake_word[VOICE_ASSISTANT_MAX_TEXT];
     char last_outbound_json[192];
+    bool audio_recording;
+    bool local_recognizer_running;
+#ifdef ESP_PLATFORM
+    TaskHandle_t audio_task;
+    bool audio_task_running;
+#endif
 };
 
 void voice_assistant_emit(

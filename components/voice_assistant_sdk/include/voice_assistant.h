@@ -42,6 +42,7 @@ typedef enum {
     VOICE_ASSISTANT_EVENT_THINKING,
     VOICE_ASSISTANT_EVENT_SPEAKING,
     VOICE_ASSISTANT_EVENT_IDLE,
+    VOICE_ASSISTANT_EVENT_WAKE_WORD,
     VOICE_ASSISTANT_EVENT_TRANSCRIPT_DELTA,
     VOICE_ASSISTANT_EVENT_ASSISTANT_TEXT,
     VOICE_ASSISTANT_EVENT_TOOL_CALL,
@@ -63,6 +64,27 @@ typedef esp_err_t (*voice_assistant_tool_invoke_cb_t)(
     char *response_json,
     size_t response_size,
     void *user_ctx);
+
+typedef enum {
+    VOICE_ASSISTANT_LOCAL_RESULT_NONE = 0,
+    VOICE_ASSISTANT_LOCAL_RESULT_WAKE_WORD,
+    VOICE_ASSISTANT_LOCAL_RESULT_COMMAND,
+} voice_assistant_local_result_type_t;
+
+typedef struct {
+    voice_assistant_local_result_type_t type;
+    const char *wake_word;
+    const char *text;
+} voice_assistant_local_result_t;
+
+typedef struct {
+    esp_err_t (*init)(void *ctx);
+    esp_err_t (*deinit)(void *ctx);
+    esp_err_t (*start)(void *ctx);
+    esp_err_t (*stop)(void *ctx);
+    voice_assistant_local_result_t (*process_pcm)(void *ctx, const int16_t *samples, size_t sample_count);
+    void *ctx;
+} voice_assistant_local_recognizer_t;
 
 typedef struct {
     esp_err_t (*init)(void *ctx);
@@ -89,6 +111,7 @@ typedef struct {
     voice_assistant_event_cb_t event_cb;
     void *user_ctx;
     voice_assistant_audio_port_t audio_port;
+    voice_assistant_local_recognizer_t local_recognizer;
     int sample_rate_hz;
     int frame_ms;
     size_t task_stack_size;
@@ -100,9 +123,12 @@ esp_err_t voice_assistant_stop(voice_assistant_handle_t handle);
 esp_err_t voice_assistant_listen(voice_assistant_handle_t handle, voice_assistant_listen_mode_t mode);
 esp_err_t voice_assistant_abort(voice_assistant_handle_t handle);
 esp_err_t voice_assistant_register_tool(voice_assistant_handle_t handle, const voice_assistant_tool_t *tool);
+esp_err_t voice_assistant_poll_audio(voice_assistant_handle_t handle);
+esp_err_t voice_assistant_process_audio_frame(voice_assistant_handle_t handle, const int16_t *samples, size_t sample_count);
 voice_assistant_state_t voice_assistant_state(voice_assistant_handle_t handle);
 const char *voice_assistant_state_text(voice_assistant_state_t state);
 voice_assistant_audio_port_t voice_assistant_waveshare_rlcd_4_2_audio_port(void);
+voice_assistant_local_recognizer_t voice_assistant_esp_sr_local_recognizer(void);
 
 #ifdef __cplusplus
 }
