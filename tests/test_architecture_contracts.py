@@ -4,99 +4,112 @@ import unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+EDGE_AGENT = ROOT / "application/edge_agent"
+CALENDAR_HOME = EDGE_AGENT / "components/calendar_home"
 
 
 class ArchitectureContractTests(unittest.TestCase):
-    def test_firmware_refreshes_display_after_model_updates(self):
-        main_source = (ROOT / "main/main.c").read_text(encoding="utf-8")
-        display_header = (ROOT / "src/platform/esp32/calendar_display.h").read_text(encoding="utf-8")
+    def test_esp_claw_edge_agent_skeleton_is_the_firmware_entry(self):
+        self.assertTrue((EDGE_AGENT / "main/main.c").is_file())
+        self.assertTrue((EDGE_AGENT / "main/idf_component.yml").is_file())
+        self.assertTrue((ROOT / "components/claw_capabilities").is_dir())
+        self.assertTrue((ROOT / "components/claw_modules").is_dir())
+        self.assertTrue((ROOT / "components/common").is_dir())
+        self.assertTrue((ROOT / "components/lua_modules").is_dir())
+        self.assertFalse((ROOT / "main/main.c").exists())
+        self.assertFalse((ROOT / "CMakeLists.txt").exists())
 
-        self.assertIn("esp_err_t calendar_display_update(const calendar_model_t *model);", display_header)
-        self.assertIn("ESP_ERROR_CHECK(calendar_display_update(&model));", main_source)
+    def test_waveshare_rlcd_board_support_is_the_hardware_baseline(self):
+        board = EDGE_AGENT / "boards/waveshare/waveshare_ESP32_S3_RLCD_4_2"
+        self.assertTrue(board.is_dir())
+        self.assertIn("display_lcd", (board / "board_devices.yaml").read_text(encoding="utf-8"))
+        self.assertIn("ES8311", (board / "board_devices.yaml").read_text(encoding="utf-8"))
+        self.assertIn("ES7210", (board / "board_devices.yaml").read_text(encoding="utf-8"))
+        self.assertIn("lcd_width: 400", (board / "board_devices.yaml").read_text(encoding="utf-8"))
+        self.assertIn("lcd_height: 300", (board / "board_devices.yaml").read_text(encoding="utf-8"))
+        self.assertIn("i2c_master", (board / "board_peripherals.yaml").read_text(encoding="utf-8"))
+        self.assertIn("CONFIG_ESP_BOARD_DEV_DISPLAY_LCD_SUPPORT=y", (board / "sdkconfig.defaults.board").read_text(encoding="utf-8"))
 
-    def test_esp32_platform_no_longer_returns_sample_model(self):
-        platform_source = (ROOT / "src/platform/esp32/calendar_platform.c").read_text(encoding="utf-8")
+    def test_calendar_home_is_the_only_application_level_calendar_entry(self):
+        header = (CALENDAR_HOME / "include/calendar_home.h").read_text(encoding="utf-8")
+        main_source = (EDGE_AGENT / "main/main.c").read_text(encoding="utf-8")
+        manifest = (EDGE_AGENT / "main/idf_component.yml").read_text(encoding="utf-8")
 
-        self.assertNotIn("calendar_model_sample()", platform_source)
-        self.assertNotIn("will feed calendar_model_t here", platform_source)
+        self.assertIn("esp_err_t calendar_home_start(void);", header)
+        self.assertIn('#include "calendar_home.h"', main_source)
+        self.assertIn("ESP_ERROR_CHECK(calendar_home_start());", main_source)
+        self.assertIn("calendar_home:", manifest)
+        self.assertIn("path: ../components/calendar_home", manifest)
 
-    def test_esp32_platform_initializes_live_time_and_sensor_providers(self):
-        platform_source = (ROOT / "src/platform/esp32/calendar_platform.c").read_text(encoding="utf-8")
-        kconfig = (ROOT / "main/Kconfig.projbuild").read_text(encoding="utf-8")
-        cmake = (ROOT / "main/CMakeLists.txt").read_text(encoding="utf-8")
+    def test_calendar_home_uses_esp_claw_display_arbiter_and_board_display(self):
+        home = (CALENDAR_HOME / "src/calendar_home.c").read_text(encoding="utf-8")
+        arbiter = (ROOT / "components/common/display_arbiter/display_arbiter.c").read_text(encoding="utf-8")
+        arbiter_h = (ROOT / "components/common/display_arbiter/include/display_arbiter.h").read_text(encoding="utf-8")
+        lua_runtime = (ROOT / "components/lua_modules/lua_module_lvgl/src/lua_lvgl_runtime.c").read_text(encoding="utf-8")
 
-        self.assertIn("CONFIG_CALENDAR_WIFI_SSID", platform_source)
-        self.assertIn("esp_wifi_start", platform_source)
-        self.assertIn("esp_netif_sntp_init", platform_source)
-        self.assertIn("esp_netif_sntp_sync_wait", platform_source)
-        self.assertIn("SHTC3_I2C_ADDRESS", platform_source)
-        self.assertIn("i2c_master_transmit_receive", platform_source)
-        self.assertIn("CALENDAR_WIFI_SSID", kconfig)
-        self.assertIn("CALENDAR_WIFI_PASSWORD", kconfig)
-        self.assertIn("CALENDAR_SNTP_SERVER", kconfig)
-        self.assertIn("esp_wifi", cmake)
-        self.assertIn("esp_netif", cmake)
+        self.assertIn("esp_board_manager_get_device_handle(ESP_BOARD_DEVICE_NAME_DISPLAY_LCD", home)
+        self.assertIn("esp_lcd_panel_draw_bitmap", home)
+        self.assertIn("DISPLAY_ARBITER_OWNER_CALENDAR", arbiter_h)
+        self.assertIn("display_arbiter_register_owner_changed_callback", arbiter)
+        self.assertIn("display_arbiter_acquire(DISPLAY_ARBITER_OWNER_CALENDAR)", home)
+        self.assertIn("owner != DISPLAY_ARBITER_OWNER_CALENDAR", lua_runtime)
 
-    def test_shtc3_i2c_timing_matches_waveshare_reference(self):
-        platform_source = (ROOT / "src/platform/esp32/calendar_platform.c").read_text(encoding="utf-8")
+    def test_calendar_board_data_reuses_or_falls_back_from_board_manager_i2c(self):
+        board_data = (CALENDAR_HOME / "src/calendar_board_data.c").read_text(encoding="utf-8")
 
-        self.assertIn("#define SHTC3_WAKE_DELAY_MS 50", platform_source)
-        self.assertIn("#define SHTC3_MEASURE_DELAY_MS 20", platform_source)
-        self.assertIn("#define CALENDAR_I2C_DATA_TIMEOUT_MS 5000", platform_source)
-        self.assertIn("#define CALENDAR_I2C_DONE_TIMEOUT_MS 1000", platform_source)
-        self.assertIn("i2c_master_bus_wait_all_done(g_i2c_bus", platform_source)
-        self.assertIn("vTaskDelay(pdMS_TO_TICKS(SHTC3_WAKE_DELAY_MS));", platform_source)
-        self.assertIn("vTaskDelay(pdMS_TO_TICKS(SHTC3_MEASURE_DELAY_MS));", platform_source)
-        self.assertNotIn("pdMS_TO_TICKS(2)", platform_source)
+        self.assertIn("i2c_master_get_bus_handle", board_data)
+        self.assertIn("PCF85063_I2C_ADDRESS", board_data)
+        self.assertIn("SHTC3_I2C_ADDRESS", board_data)
+        self.assertIn("calendar_bcd_is_valid", board_data)
+        self.assertIn("calendar_date_components_valid", board_data)
+        self.assertNotIn("esp_wifi_start", board_data)
+        self.assertNotIn("esp_netif_sntp_init", board_data)
+        self.assertNotIn("CONFIG_CALENDAR_WIFI", board_data)
 
-    def test_shtc3_init_probe_failure_keeps_platform_bootable(self):
-        platform_source = (ROOT / "src/platform/esp32/calendar_platform.c").read_text(encoding="utf-8")
-
-        self.assertIn("static void calendar_probe_shtc3(void)", platform_source)
-        self.assertIn("calendar_probe_shtc3();", platform_source)
-        self.assertIn("SHTC3 init probe failed", platform_source)
-        self.assertNotIn("ESP_RETURN_ON_ERROR(calendar_shtc3_wake(), TAG, \"SHTC3 wake failed during init\")", platform_source)
-
-    def test_voice_assistant_sdk_is_a_separate_component(self):
-        main_source = (ROOT / "main/main.c").read_text(encoding="utf-8")
-        cmake = (ROOT / "main/CMakeLists.txt").read_text(encoding="utf-8")
-        sdk_header = (ROOT / "components/voice_assistant_sdk/include/voice_assistant.h").read_text(encoding="utf-8")
-        sdk_kconfig = (ROOT / "components/voice_assistant_sdk/Kconfig").read_text(encoding="utf-8")
-
-        self.assertIn('#include "voice_assistant.h"', main_source)
-        self.assertIn("voice_assistant_start", main_source)
-        self.assertIn("voice_assistant_sdk", cmake)
-        self.assertIn("config VOICE_ASSISTANT_ENABLE", sdk_kconfig)
-        self.assertIn("voice_assistant_register_tool", sdk_header)
-        self.assertNotIn("esp_websocket_client", main_source)
-        self.assertNotIn("ES8311", main_source)
-
-    def test_dev_verify_renders_after_optional_esp32_build(self):
-        script = (ROOT / "scripts/dev-verify.sh").read_text(encoding="utf-8")
-
-        build_position = script.rfind("./scripts/build.sh esp32")
-        render_position = script.rfind("./scripts/render-check.sh build-sim/calendar-render.png")
-
-        self.assertGreater(build_position, -1)
-        self.assertGreater(render_position, -1)
-        self.assertGreater(render_position, build_position)
+    def test_self_built_voice_tts_and_old_rlcd_bridge_are_removed(self):
+        removed_paths = [
+            "components/voice_assistant_sdk",
+            "components/local_tts",
+            "src/platform/esp32/calendar_display.c",
+            "src/platform/esp32/calendar_display.h",
+            "src/platform/esp32/rlcd_mono_buffer.c",
+            "src/platform/esp32/rlcd_mono_buffer.h",
+            "tests/test_voice_assistant_sdk.c",
+            "tests/test_local_tts.c",
+            "tests/test_rlcd_mono_buffer.c",
+        ]
+        for path in removed_paths:
+            self.assertFalse((ROOT / path).exists(), path)
 
     def test_project_prefers_lvgl_widgets_before_custom_components(self):
         agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-        ui_source = (ROOT / "src/app/calendar_ui.c").read_text(encoding="utf-8")
-        model_header = (ROOT / "src/app/calendar_model.h").read_text(encoding="utf-8")
-        model_source = (ROOT / "src/app/calendar_model.c").read_text(encoding="utf-8")
-        sdkconfig_defaults = (ROOT / "sdkconfig.defaults").read_text(encoding="utf-8")
+        ui_source = (CALENDAR_HOME / "src/calendar_ui.c").read_text(encoding="utf-8")
+        model_header = (CALENDAR_HOME / "src/calendar_model.h").read_text(encoding="utf-8")
+        model_source = (CALENDAR_HOME / "src/calendar_model.c").read_text(encoding="utf-8")
         sim_conf = (ROOT / "sim/lv_conf.h").read_text(encoding="utf-8")
+        defaults = (EDGE_AGENT / "sdkconfig.defaults").read_text(encoding="utf-8")
 
         self.assertIn("Prefer existing LVGL widgets/components before custom UI components.", agents)
         self.assertIn("lv_calendar_create", ui_source)
+        self.assertIn("lv_calendar_get_btnmatrix", ui_source)
         self.assertNotIn("calendar_model_month_grid", model_header)
         self.assertNotIn("calendar_model_month_grid", model_source)
-        self.assertIn("CONFIG_LV_USE_BTNMATRIX=y", sdkconfig_defaults)
-        self.assertIn("CONFIG_LV_USE_CALENDAR=y", sdkconfig_defaults)
         self.assertIn("#define LV_USE_BTNMATRIX 1", sim_conf)
         self.assertIn("#define LV_USE_CALENDAR 1", sim_conf)
+        self.assertIn("CONFIG_LV_USE_BTNMATRIX=y", defaults)
+        self.assertIn("CONFIG_LV_USE_CALENDAR=y", defaults)
+
+    def test_simulator_render_chain_is_preserved_against_calendar_home(self):
+        sim_cmake = (ROOT / "sim/CMakeLists.txt").read_text(encoding="utf-8")
+        sim_source = (ROOT / "sim/main_sdl.c").read_text(encoding="utf-8")
+        render_script = (ROOT / "scripts/render-check.sh").read_text(encoding="utf-8")
+        dev_verify = (ROOT / "scripts/dev-verify.sh").read_text(encoding="utf-8")
+
+        self.assertIn("../application/edge_agent/components/calendar_home/src/calendar_ui.c", sim_cmake)
+        self.assertIn("calendar_model_from_host_time", sim_source)
+        self.assertIn("calendar_ui_update(&ui, &model);", sim_source)
+        self.assertIn("scripts/check-render-png.py", render_script)
+        self.assertIn("./scripts/render-check.sh build-sim/calendar-render.png", dev_verify)
 
     def test_python_bytecode_is_removed_and_ignored(self):
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")

@@ -1,0 +1,21 @@
+menu "Calendar Home"
+
+config CALENDAR_HOME_ENABLE_RTC
+    bool "Enable PCF85063 RTC fallback"
+    default y
+
+config CALENDAR_HOME_ENABLE_SHTC3
+    bool "Enable SHTC3 indoor temperature and humidity"
+    default y
+
+config CALENDAR_HOME_I2C_PORT
+    int "Calendar sensor I2C port"
+    default 0
+    range 0 1
+
+config CALENDAR_HOME_REFRESH_MS
+    int "Calendar refresh interval in milliseconds"
+    default 30000
+    range 1000 3600000
+
+endmenu

@@ -1,0 +1,8 @@
+## IDF Component Manager Manifest File
+dependencies:
+  cap_lua:
+    path: ../../claw_capabilities/cap_lua
+  display_arbiter:
+    path: ../../common/display_arbiter
+  espressif/esp_lcd_touch: "*"
+  lvgl/lvgl: ^9.5.0

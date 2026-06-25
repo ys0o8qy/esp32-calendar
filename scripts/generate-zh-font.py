@@ -10,25 +10,28 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 FONT_SOURCE = ROOT / "assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf"
+CALENDAR_HOME_SRC = ROOT / "application/edge_agent/components/calendar_home/src"
 SOURCE_PATHS = [
-    ROOT / "src/app/calendar_model.c",
-    ROOT / "src/app/calendar_ui.c",
-    ROOT / "src/platform/esp32/calendar_platform.c",
+    CALENDAR_HOME_SRC / "calendar_model.c",
+    CALENDAR_HOME_SRC / "calendar_ui.c",
+    CALENDAR_HOME_SRC / "calendar_board_data.c",
+    CALENDAR_HOME_SRC / "calendar_home.c",
+    ROOT / "sim/main_sdl.c",
 ]
-OUTPUT_C = ROOT / "src/app/calendar_font_zh.c"
-OUTPUT_H = ROOT / "src/app/calendar_font_zh.h"
+OUTPUT_C = CALENDAR_HOME_SRC / "calendar_font_zh.c"
+OUTPUT_H = CALENDAR_HOME_SRC / "calendar_font_zh.h"
 FONT_SIZE = 10
 FONT_BPP = 1
 FONT_NAME = "calendar_font_zh_16"
 LARGE_FONT_VARIANTS = [
     {
-        "output": ROOT / "src/app/calendar_font_fusion_48.c",
+        "output": CALENDAR_HOME_SRC / "calendar_font_fusion_48.c",
         "size": 48,
         "name": "calendar_font_fusion_48",
         "symbols": "0123456789:",
     },
     {
-        "output": ROOT / "src/app/calendar_font_fusion_28.c",
+        "output": CALENDAR_HOME_SRC / "calendar_font_fusion_28.c",
         "size": 28,
         "name": "calendar_font_fusion_28",
         "symbols": "0123456789-°C",

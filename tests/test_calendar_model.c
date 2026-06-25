@@ -5,30 +5,29 @@
 
 #include "calendar_model.h"
 
-void test_rlcd_mono_buffer(void);
 void test_png_writer(void);
 
-static void test_status_text_mentions_connectivity_and_cache(void)
+static void test_status_text_mentions_board_data_sources(void)
 {
     calendar_model_t model = calendar_model_sample();
     char buffer[96];
 
     calendar_model_status_text(&model, buffer, sizeof(buffer));
 
-    assert(strstr(buffer, "Wi-Fi") != NULL);
-    assert(strstr(buffer, "NTP") != NULL);
-    assert(strstr(buffer, "08:12") != NULL);
-    assert(strstr(buffer, "82%") != NULL);
+    assert(strstr(buffer, "RTC") != NULL);
+    assert(strstr(buffer, "SHTC3") != NULL);
+    assert(strstr(buffer, "已读取") != NULL);
 }
 
-static void test_sample_model_initializes_voice_assistant_fields(void)
+static void test_sample_model_initializes_board_data_fields(void)
 {
     calendar_model_t model = calendar_model_sample();
 
-    assert(model.assistant_active == false);
-    assert(strcmp(model.assistant_state_text, "语音待机") == 0);
-    assert(strcmp(model.assistant_caption, "") == 0);
-    assert(strcmp(model.assistant_error, "") == 0);
+    assert(model.time_valid == true);
+    assert(model.rtc_available == true);
+    assert(model.shtc3_available == true);
+    assert(model.indoor_valid == true);
+    assert(model.event_day_count == 1);
 }
 
 static void test_iso_week_number_handles_year_boundaries(void)
@@ -41,10 +40,9 @@ static void test_iso_week_number_handles_year_boundaries(void)
 
 int main(void)
 {
-    test_status_text_mentions_connectivity_and_cache();
-    test_sample_model_initializes_voice_assistant_fields();
+    test_status_text_mentions_board_data_sources();
+    test_sample_model_initializes_board_data_fields();
     test_iso_week_number_handles_year_boundaries();
-    test_rlcd_mono_buffer();
     test_png_writer();
     puts("calendar_model tests passed");
     return 0;

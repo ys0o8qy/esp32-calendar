@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "SDL.h"
 #include "calendar_model.h"
@@ -16,6 +17,43 @@ static SDL_Window *g_window;
 static SDL_Renderer *g_renderer;
 static SDL_Texture *g_texture;
 static uint32_t g_pixels[SIM_WIDTH * SIM_HEIGHT];
+static const char *SIM_WEEKDAYS[] = {"周日", "周一", "周二", "周三", "周四", "周五", "周六"};
+
+static calendar_model_t calendar_model_from_host_time(void)
+{
+    calendar_model_t model = calendar_model_sample();
+    time_t now_time = time(NULL);
+    struct tm local_time = {0};
+
+    if (localtime_r(&now_time, &local_time) == NULL || local_time.tm_year + 1900 < 2024) {
+        model.time_valid = false;
+        model.weekday_text = "待同步";
+        model.day_hint = "等待系统时间或RTC";
+        model.rtc_available = false;
+        model.rtc_fallback_used = false;
+        model.shtc3_available = false;
+        model.indoor_valid = false;
+        return model;
+    }
+
+    model.year = local_time.tm_year + 1900;
+    model.month = local_time.tm_mon + 1;
+    model.day = local_time.tm_mday;
+    model.hour = local_time.tm_hour;
+    model.minute = local_time.tm_min;
+    model.time_valid = true;
+    model.weekday_text = SIM_WEEKDAYS[local_time.tm_wday];
+    model.day_hint = "系统时间 · 室内已更新";
+    model.rtc_available = true;
+    model.rtc_fallback_used = false;
+    model.shtc3_available = true;
+    model.indoor_valid = true;
+    model.temp_c = 26;
+    model.humidity_percent = 46;
+    model.event_day_count = 1;
+    model.event_days[0] = model.day;
+    return model;
+}
 
 static void sdl_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p)
 {
@@ -120,12 +158,13 @@ int main(int argc, char **argv)
     display_driver.draw_buf = &draw_buffer;
     lv_disp_drv_register(&display_driver);
 
-    calendar_model_t model = calendar_model_sample();
+    calendar_model_t model = calendar_model_from_host_time();
     calendar_ui_t ui;
     calendar_ui_create(&ui, &model);
 
     bool running = true;
     uint32_t last_tick = SDL_GetTicks();
+    uint32_t last_model_update = last_tick;
     int iterations = 0;
     while (running) {
         SDL_Event event;
@@ -138,6 +177,11 @@ int main(int argc, char **argv)
         uint32_t now = SDL_GetTicks();
         lv_tick_inc(now - last_tick);
         last_tick = now;
+        if (!smoke_test && now - last_model_update >= 1000) {
+            model = calendar_model_from_host_time();
+            calendar_ui_update(&ui, &model);
+            last_model_update = now;
+        }
         lv_timer_handler();
         SDL_Delay(5);
 

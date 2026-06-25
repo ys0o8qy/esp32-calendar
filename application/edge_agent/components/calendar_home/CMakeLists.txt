@@ -1,0 +1,22 @@
+idf_component_register(
+    SRCS
+        "src/calendar_home.c"
+        "src/calendar_board_data.c"
+        "src/calendar_model.c"
+        "src/calendar_ui.c"
+        "src/calendar_theme.c"
+        "src/calendar_font_zh.c"
+        "src/calendar_font_fusion_28.c"
+        "src/calendar_font_fusion_48.c"
+    INCLUDE_DIRS
+        "include"
+        "src"
+    REQUIRES
+        esp_timer
+        esp_driver_i2c
+        esp_lcd
+        esp_board_manager
+        display_arbiter
+        lua_module_lvgl
+        lvgl
+)

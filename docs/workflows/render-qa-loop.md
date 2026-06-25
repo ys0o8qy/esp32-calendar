@@ -7,8 +7,9 @@ prevents structurally valid but visually broken UI from being accepted.
 
 Run the loop after changes to:
 
-- `src/app/` UI, theme, model, or font code
-- `src/platform/esp32/` display or RLCD buffer code
+- `application/edge_agent/components/calendar_home/` UI, theme, model, board
+  data, or font code
+- `components/common/display_arbiter/` display ownership code
 - `sim/` simulator code
 - render, font, build, or verification scripts
 - any compile/build command before reporting completion
@@ -42,8 +43,8 @@ true:
 - the script reports a valid `400x300` PNG with enough non-background and edge
   detail
 - designer visual inspection shows readable, well-aligned time, calendar,
-  weather, and status regions with no obvious typography, spacing, clipping,
-  overlap, completeness, or composition problems
+  indoor sensor, RTC/SHTC3 status regions with no obvious typography, spacing,
+  clipping, overlap, completeness, or composition problems
 
 ## Designer Review Checklist
 
@@ -62,7 +63,7 @@ as a successful render.
 ### Alignment
 
 - Panel edges should align to an intentional grid.
-- Calendar weekday labels, date numbers, event dots, and month headings should
+- Calendar weekday labels, date numbers, highlights, and month headings should
   align consistently.
 - Text baselines in the same row should not appear randomly offset.
 - Left and right columns should feel deliberately positioned, not accidentally
@@ -79,22 +80,23 @@ as a successful render.
 ### Overflow And Clipping
 
 - No text should be cut off by fixed-height containers.
-- Long status, weather, event, or offline strings should be shortened, wrapped
-  deliberately, or clipped only when the loss is intentional.
+- Long status, RTC fallback, sensor, or offline strings should be shortened,
+  wrapped deliberately, or clipped only when the loss is intentional.
 - Date numbers should not be clipped by the calendar panel.
-- Bottom bars and weather cards must show their complete intended content.
+- Bottom bars and indoor sensor panels must show their complete intended
+  content.
 
 ### Collision And Overlap
 
 - Text must not overlap other text.
-- Event dots must not collide with date numbers.
+- Calendar highlights must not collide with date numbers.
 - Large numeric temperature/time text must not cover labels.
 - Adjacent panels must not visually run into each other.
 
 ### Completeness And Legibility
 
 - Required information should be visible: current date, time, month grid,
-  weather, next event/offline status.
+  indoor temperature/humidity, and RTC/SHTC3 status.
 - There should be no unexpected blank regions where a component failed to draw.
 - Missing glyph boxes, corrupted CJK text, or fallback font surprises are
   failures.
@@ -119,14 +121,6 @@ structural check and the designer review checklist.
 
 ## Hardware Frame Path
 
-When validating the board framebuffer, enable `CALENDAR_DUMP_RLCD_FRAME`,
-capture the serial log, and convert it:
-
-```bash
-python3 scripts/rlcd-log-to-png.py serial.log build-sim/rlcd-frame.png
-python3 scripts/check-render-png.py build-sim/rlcd-frame.png
-```
-
-Inspect `build-sim/rlcd-frame.png` with the same visual criteria. This verifies
-the final pixels sent to the RLCD controller, not physical contrast or refresh
-artifacts.
+The migrated firmware uses the ESP-Claw Waveshare board support custom
+`display_lcd` panel. The retained canonical QA path is the simulator PNG above;
+add a board framebuffer export only if the board support later exposes one.

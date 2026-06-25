@@ -1,111 +1,115 @@
 # esp32-calendar
 
-ESP-IDF calendar firmware and LVGL simulator for the Waveshare ESP32-S3-RLCD-4.2 board.
+ESP-Claw Edge Agent based calendar firmware for the Waveshare
+ESP32-S3-RLCD-4.2 board, plus a desktop LVGL simulator used for 400x300 RLCD
+render QA.
 
-## Reference
+## Architecture
 
-- Waveshare docs: https://docs.waveshare.net/ESP32-S3-RLCD-4.2/
-- Waveshare example repo: https://github.com/waveshareteam/ESP32-S3-RLCD-4.2
+The firmware project entry is `application/edge_agent`, imported from
+`espressif/esp-claw` and locked to upstream commit
+`ac2a2ec0ca0b23d1270065e563c4ee4253e32e51` for this migration.
 
-## Chosen stack
+The hardware baseline is the ESP-Claw board support:
 
-This project intentionally uses the professional path from the Waveshare docs:
+```text
+application/edge_agent/boards/waveshare/waveshare_ESP32_S3_RLCD_4_2
+```
 
-- VS Code
-- Espressif ESP-IDF Extension
-- ESP-IDF `v6.0.1`
-- Target: `esp32s3`
+That board support owns the RLCD custom panel, ES8311/ES7210 audio devices,
+I2C/I2S peripherals, partitions, flash, and PSRAM defaults. The calendar does
+not keep a separate firmware RLCD bridge.
 
-Think of this project as the empty house with the wiring already done: ESP-IDF, target, flash/PSRAM assumptions, and editor integration are prepared, and the calendar UI can be built cleanly on top.
+Calendar-specific code lives in:
 
-## Configure ESP-IDF
+```text
+application/edge_agent/components/calendar_home
+```
+
+The only app-level calendar entry is:
+
+```c
+esp_err_t calendar_home_start(void);
+```
+
+`calendar_home` is started by Edge Agent after board/display/config/filesystem
+initialization. It uses the ESP-Claw `display_arbiter` as the default calendar
+screen and pauses LVGL flushing when Lua takes display ownership.
+
+## Retained Calendar Data
+
+First migrated version keeps only local board data:
+
+- system time from ESP-Claw runtime configuration/network stack
+- PCF85063 RTC fallback
+- SHTC3 indoor temperature and humidity
+
+Wi-Fi provisioning, timezone, HTTP server, LLM/IM/MCP/Lua/Agent configuration,
+event routing, and scheduler are provided by ESP-Claw. The old local
+`voice_assistant_sdk`, `local_tts`, WebSocket assistant protocol, local wake
+echo path, calendar Wi-Fi Kconfig, and local SNTP Kconfig have been removed.
+
+## ESP-IDF
+
+This project follows ESP-Claw's recommended ESP-IDF baseline:
+
+```text
+ESP-IDF v5.5.4
+```
+
+Default local script paths assume:
+
+```text
+/Users/nspzoow/.espressif/v5.5.4/esp-idf
+/Users/nspzoow/.espressif
+```
+
+Configure or validate the local export script:
 
 ```bash
-cd ~/Documents/personal/esp32-calendar
-chmod +x scripts/*.sh
 ./scripts/bootstrap-esp-idf.sh
 source ./scripts/export-esp-idf.sh
 idf.py --version
 ```
 
-This project uses the ESP-IDF v6.0.1 installation under:
+## Firmware Build
 
-```text
-/Users/nspzoow/.espressif/v6.0.1/esp-idf
-/Users/nspzoow/.espressif
-```
-
-The bootstrap script validates that installation and regenerates
-`scripts/export-esp-idf.sh`; it does not install a project-local ESP-IDF copy.
-
-## Build
+Use the wrapper:
 
 ```bash
 ./scripts/build.sh esp32
 ```
 
-Or manually:
+Equivalent manual commands:
 
 ```bash
 source ./scripts/export-esp-idf.sh
+cd application/edge_agent
+idf.py reconfigure
+rm -f sdkconfig sdkconfig.old
+idf.py set-target esp32s3
+python managed_components/espressif__esp_board_manager/gen_bmgr_config_codes.py \
+  -c ./boards -b waveshare_ESP32_S3_RLCD_4_2 --project-dir .
+rm -f sdkconfig sdkconfig.old
+export SDKCONFIG_DEFAULTS="$PWD/sdkconfig.defaults;$PWD/components/gen_bmgr_codes/board_manager.defaults"
 idf.py set-target esp32s3
 idf.py build
 ```
 
-Flash over USB Serial/JTAG:
+Flash over USB Serial/JTAG from `application/edge_agent`:
 
 ```bash
-source ./scripts/export-esp-idf.sh
-idf.py -p /dev/cu.usbmodem101 flash
+idf.py -p /dev/cu.usbmodem101 flash monitor
 ```
 
-`scripts/build.sh` also supports:
+## Desktop LVGL Simulator
 
-```bash
-./scripts/build.sh sim
-./scripts/build.sh all
-```
-
-After code changes or build checks, run the development verification workflow:
-
-```bash
-./scripts/dev-verify.sh
-```
-
-To include the ESP32 firmware build:
-
-```bash
-./scripts/dev-verify.sh --esp32
-```
-
-This workflow runs tests, exports `build-sim/calendar-render.png`, runs the
-structural render check, and then requires visual inspection with the
-`$rlcd-render-check` workflow. If the PNG has layout, font, clipping, overlap,
-or blank-region problems, fix the UI and rerun the workflow until the latest
-render is visually normal. See `docs/workflows/render-qa-loop.md`.
-
-## Desktop LVGL simulator
-
-The calendar UI is structured so the LVGL screen can run on a desktop SDL2
-window before it is flashed to the ESP32 board. This keeps layout work fast and
-isolates display/Wi-Fi/weather hardware code behind a platform boundary. The
-desktop simulator and ESP32 firmware both use `src/app/calendar_ui.*`.
-
-Install desktop prerequisites:
+The simulator remains independent from the ESP-Claw firmware project so UI
+layout work and PNG QA stay fast:
 
 ```bash
 brew install sdl2 cmake
-```
-
-Fetch LVGL v8 locally. The checkout is intentionally ignored by Git:
-
-```bash
 git clone --depth 1 --branch v8.3.11 --single-branch https://github.com/lvgl/lvgl.git third_party/lvgl
-```
-
-Build and smoke-test the simulator:
-
-```bash
 ./scripts/build-sim.sh
 SDL_VIDEODRIVER=dummy ./build-sim/calendar_sim --smoke-test
 ```
@@ -116,101 +120,50 @@ Run the interactive simulator:
 ./scripts/run-sim.sh
 ```
 
-Dump the simulator render to a PNG and run the structural smoke check:
+Export the canonical 400x300 render:
 
 ```bash
-./scripts/render-check.sh
+./scripts/render-check.sh build-sim/calendar-render.png
 ```
 
-This writes `build-sim/calendar-render.png` by default. To choose the output
-path:
+The simulator builds against the same `calendar_home/src/calendar_ui.c`,
+`calendar_model.c`, theme, and generated font assets used by firmware.
+
+## Verification
+
+Default local workflow:
 
 ```bash
-./scripts/render-check.sh /tmp/calendar-render.png
+./scripts/dev-verify.sh
 ```
 
-For lower-level simulator usage:
+With firmware build:
 
 ```bash
-SDL_VIDEODRIVER=dummy ./build-sim/calendar_sim --dump-png build-sim/calendar-render.png
-python3 scripts/check-render-png.py build-sim/calendar-render.png
+./scripts/dev-verify.sh --esp32
 ```
 
-If LVGL is checked out elsewhere, pass it explicitly:
+The workflow runs Python tests, C tests, simulator render export, and
+`scripts/check-render-png.py`. Per `AGENTS.md`, after any code/build
+verification you must also inspect `build-sim/calendar-render.png` visually
+with the RLCD render checklist before reporting the work complete.
 
-```bash
-LVGL_ROOT=/absolute/path/to/lvgl ./scripts/build-sim.sh
-```
-
-Shared UI data lives in `src/app/calendar_model.*`. LVGL screen construction
-lives in `src/app/calendar_ui.*`. The ESP32 display bridge lives in
-`src/platform/esp32/calendar_display.*` and adapts LVGL RGB565 draw buffers to
-the ST7305 monochrome RLCD buffer used by the Waveshare board. ESP32-specific
-Wi-Fi, NTP, weather HTTP, RTC, and sensor code should feed the same model
-through `src/platform/esp32/`.
-
-The UI uses a generated 10px, 1bpp Simplified Chinese subset font at
-`src/app/calendar_font_zh.*`. The generator reads the current UI string literals
-and converts the project font asset,
-`assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf`, with `lv_font_conv`.
-Fusion Pixel Font is a monospaced pixel font chosen for low-resolution CJK
-rendering. The generator emits the 10px default UI subset plus larger Fusion
-Pixel Font sizes for the primary time and temperature labels, so the project
-does not mix Montserrat with the CJK UI font. After changing Chinese UI text,
-regenerate and verify the subset:
+Font coverage:
 
 ```bash
 python3 scripts/generate-zh-font.py
 python3 scripts/check-font-coverage.py
 ```
 
-## Open in VS Code
+## Board Notes
 
-```bash
-code ~/Documents/personal/esp32-calendar
-```
-
-Then install the recommended `Espressif IDF` extension when prompted. The workspace settings point the extension at the ESP-IDF v6.0.1 install under `/Users/nspzoow/.espressif`.
-
-## Board notes
-
-Waveshare ESP32-S3-RLCD-4.2 uses:
+Waveshare ESP32-S3-RLCD-4.2 includes:
 
 - ESP32-S3-WROOM-1-N16R8
-- 16MB Flash
+- 16MB flash
 - 8MB PSRAM
-- 4.2-inch RLCD driven by ST7305
+- 4.2-inch 400x300 RLCD
 - ES8311 audio codec
 - ES7210 ADC / dual mic path
 - PCF85063 RTC
 - SHTC3 temperature/humidity sensor
-
-`sdkconfig.defaults` enables ESP32-S3 target, 16MB flash, octal PSRAM, and the
-LVGL v8 options needed by the shared calendar UI.
-
-## Fetch Waveshare examples
-
-```bash
-./scripts/fetch-waveshare-examples.sh
-```
-
-Expected reference location:
-
-```text
-vendor/waveshare-esp32-s3-rlcd-4.2/02_Example/ESP-IDF
-```
-
-The ESP32 display port follows the official ESP-IDF `08_LVGL_V8_Test` example:
-GPIO12 MOSI, GPIO11 SCK, GPIO5 DC, GPIO40 CS, GPIO41 reset, 400x300 landscape,
-and the ST7305 initialization sequence from Waveshare.
-
-For hardware render debugging, enable `CALENDAR_DUMP_RLCD_FRAME` in
-`idf.py menuconfig` under `ESP32 Calendar`. The first LVGL flush will log
-`CALENDAR_RLCD_FRAME_BEGIN`, `CALENDAR_RLCD_FRAME_HEX`, and
-`CALENDAR_RLCD_FRAME_END` records containing the final ST7305 1bpp frame buffer
-sent to the panel. Convert a captured serial log to PNG with:
-
-```bash
-python3 scripts/rlcd-log-to-png.py serial.log build-sim/rlcd-frame.png
-python3 scripts/check-render-png.py build-sim/rlcd-frame.png
-```

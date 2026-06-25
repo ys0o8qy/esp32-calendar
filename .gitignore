@@ -7,6 +7,13 @@ sdkconfig
 sdkconfig.old
 managed_components/
 dependencies.lock
+application/edge_agent/build/
+application/edge_agent/build-*/
+application/edge_agent/sdkconfig
+application/edge_agent/sdkconfig.old
+application/edge_agent/managed_components/
+application/edge_agent/dependencies.lock
+application/edge_agent/components/gen_bmgr_codes/
 
 # Local git worktrees
 .worktrees/
