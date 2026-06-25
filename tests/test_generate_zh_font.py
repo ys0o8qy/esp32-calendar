@@ -26,10 +26,12 @@ class GenerateZhFontTests(unittest.TestCase):
         for char in "0123456789WiFiNTPRTC:%-C":
             self.assertIn(char, chars)
 
-    def test_scans_esp32_platform_text_for_font_coverage(self):
+    def test_scans_calendar_home_text_for_font_coverage(self):
         generator = load_generator()
 
-        self.assertIn(generator.ROOT / "src/platform/esp32/calendar_platform.c", generator.SOURCE_PATHS)
+        self.assertIn(generator.CALENDAR_HOME_SRC / "calendar_board_data.c", generator.SOURCE_PATHS)
+        self.assertIn(generator.CALENDAR_HOME_SRC / "calendar_home.c", generator.SOURCE_PATHS)
+        self.assertIn(generator.ROOT / "sim/main_sdl.c", generator.SOURCE_PATHS)
 
     def test_builds_lvgl_font_converter_command_for_calendar_subset(self):
         generator = load_generator()
@@ -49,7 +51,7 @@ class GenerateZhFontTests(unittest.TestCase):
         symbol_args = [cmd[index + 1] for index, value in enumerate(cmd) if value == "--symbols"]
         self.assertEqual(symbol_args, ["A天"])
         output_arg = cmd[cmd.index("-o") + 1]
-        self.assertEqual(output_arg, "src/app/calendar_font_zh.c")
+        self.assertEqual(output_arg, "application/edge_agent/components/calendar_home/src/calendar_font_zh.c")
         self.assertFalse(pathlib.Path(output_arg).is_absolute())
         self.assertIn("--lv-font-name", cmd)
         self.assertIn("calendar_font_zh_16", cmd)
@@ -82,9 +84,9 @@ class GenerateZhFontTests(unittest.TestCase):
         self.assertEqual(
             outputs,
             [
-                "src/app/calendar_font_zh.c",
-                "src/app/calendar_font_fusion_48.c",
-                "src/app/calendar_font_fusion_28.c",
+                "application/edge_agent/components/calendar_home/src/calendar_font_zh.c",
+                "application/edge_agent/components/calendar_home/src/calendar_font_fusion_48.c",
+                "application/edge_agent/components/calendar_home/src/calendar_font_fusion_28.c",
             ],
         )
         self.assertTrue(generator.OUTPUT_H.exists())

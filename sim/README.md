@@ -22,4 +22,7 @@ cmake --build build-sim
 ./build-sim/calendar_sim
 ```
 
-The simulator uses mock data from `calendar_model_sample()`. ESP32 firmware should fill the same `calendar_model_t` from Wi-Fi, NTP, weather HTTP, RTC, and local sensors.
+The simulator builds the same `calendar_home` UI/model/theme/font files used by
+firmware. It starts from `calendar_model_sample()`, overlays the host's current
+date and time, and uses deterministic mock indoor temperature/humidity so
+render-check PNGs do not drift stale.

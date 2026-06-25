@@ -7,48 +7,15 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_executable(test_calendar_model
     test_calendar_model.c
-    ../src/app/calendar_model.c
-    test_rlcd_mono_buffer.c
-    ../src/platform/esp32/rlcd_mono_buffer.c
+    ../application/edge_agent/components/calendar_home/src/calendar_model.c
     test_png_writer.c
     ../sim/png_writer.c
 )
 
 target_include_directories(test_calendar_model PRIVATE
-    ../src/app
-    ../src/platform/esp32
+    ../application/edge_agent/components/calendar_home/src
     ../sim
 )
 
 enable_testing()
 add_test(NAME calendar_model COMMAND test_calendar_model)
-
-add_executable(test_voice_assistant_sdk
-    test_voice_assistant_sdk.c
-    ../components/voice_assistant_sdk/src/voice_assistant.c
-    ../components/voice_assistant_sdk/src/voice_state.c
-    ../components/voice_assistant_sdk/src/voice_protocol.c
-    ../components/voice_assistant_sdk/src/voice_audio.c
-    ../components/voice_assistant_sdk/src/voice_tts.c
-    ../components/voice_assistant_sdk/src/voice_transport_ws.c
-    ../components/local_tts/src/local_tts.c
-)
-
-target_include_directories(test_voice_assistant_sdk PRIVATE
-    ../components/voice_assistant_sdk/include
-    ../components/voice_assistant_sdk/src
-    ../components/local_tts/include
-)
-
-add_test(NAME voice_assistant_sdk COMMAND test_voice_assistant_sdk)
-
-add_executable(test_local_tts
-    test_local_tts.c
-    ../components/local_tts/src/local_tts.c
-)
-
-target_include_directories(test_local_tts PRIVATE
-    ../components/local_tts/include
-)
-
-add_test(NAME local_tts COMMAND test_local_tts)

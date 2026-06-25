@@ -7,11 +7,14 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FONT_PATH = ROOT / "src/app/calendar_font_zh.c"
+CALENDAR_HOME_SRC = ROOT / "application/edge_agent/components/calendar_home/src"
+FONT_PATH = CALENDAR_HOME_SRC / "calendar_font_zh.c"
 SOURCE_PATHS = [
-    ROOT / "src/app/calendar_ui.c",
-    ROOT / "src/app/calendar_model.c",
-    ROOT / "src/platform/esp32/calendar_platform.c",
+    CALENDAR_HOME_SRC / "calendar_ui.c",
+    CALENDAR_HOME_SRC / "calendar_model.c",
+    CALENDAR_HOME_SRC / "calendar_board_data.c",
+    CALENDAR_HOME_SRC / "calendar_home.c",
+    ROOT / "sim/main_sdl.c",
 ]
 
 

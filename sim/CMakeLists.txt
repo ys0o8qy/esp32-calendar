@@ -26,17 +26,17 @@ add_subdirectory("${LVGL_ROOT}" "${CMAKE_BINARY_DIR}/lvgl" EXCLUDE_FROM_ALL)
 add_executable(calendar_sim
     main_sdl.c
     png_writer.c
-    ../src/app/calendar_model.c
-    ../src/app/calendar_font_zh.c
-    ../src/app/calendar_font_fusion_28.c
-    ../src/app/calendar_font_fusion_48.c
-    ../src/app/calendar_theme.c
-    ../src/app/calendar_ui.c
+    ../application/edge_agent/components/calendar_home/src/calendar_model.c
+    ../application/edge_agent/components/calendar_home/src/calendar_font_zh.c
+    ../application/edge_agent/components/calendar_home/src/calendar_font_fusion_28.c
+    ../application/edge_agent/components/calendar_home/src/calendar_font_fusion_48.c
+    ../application/edge_agent/components/calendar_home/src/calendar_theme.c
+    ../application/edge_agent/components/calendar_home/src/calendar_ui.c
 )
 
 target_include_directories(calendar_sim PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}"
-    "${CMAKE_CURRENT_LIST_DIR}/../src/app"
+    "${CMAKE_CURRENT_LIST_DIR}/../application/edge_agent/components/calendar_home/src"
 )
 
 target_link_libraries(calendar_sim PRIVATE lvgl PkgConfig::SDL2)

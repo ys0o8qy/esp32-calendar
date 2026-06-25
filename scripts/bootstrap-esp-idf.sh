@@ -2,13 +2,13 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-IDF_PATH_GLOBAL="${IDF_PATH_GLOBAL:-/Users/nspzoow/.espressif/v6.0.1/esp-idf}"
+IDF_PATH_GLOBAL="${IDF_PATH_GLOBAL:-/Users/nspzoow/.espressif/v5.5.4/esp-idf}"
 IDF_TOOLS_PATH_GLOBAL="${IDF_TOOLS_PATH_GLOBAL:-/Users/nspzoow/.espressif}"
-IDF_PYTHON_ENV_PATH_GLOBAL="${IDF_PYTHON_ENV_PATH_GLOBAL:-/Users/nspzoow/.espressif/python_env/idf6.0_py3.11_env}"
+IDF_PYTHON_ENV_PATH_GLOBAL="${IDF_PYTHON_ENV_PATH_GLOBAL:-/Users/nspzoow/.espressif/python_env/idf5.5_py3.14_env}"
 
 if [[ ! -f "$IDF_PATH_GLOBAL/export.sh" ]]; then
-  echo "ESP-IDF v6.0.1 was not found at: $IDF_PATH_GLOBAL" >&2
-  echo "Install ESP-IDF v6.0.1 first, then rerun this script." >&2
+  echo "ESP-IDF v5.5.4 was not found at: $IDF_PATH_GLOBAL" >&2
+  echo "Install ESP-IDF v5.5.4 first, then rerun this script." >&2
   exit 1
 fi
 
@@ -21,7 +21,7 @@ IDF_TOOLS_PATH="\${IDF_TOOLS_PATH:-$IDF_TOOLS_PATH_GLOBAL}"
 IDF_PYTHON_ENV_PATH="\${IDF_PYTHON_ENV_PATH:-$IDF_PYTHON_ENV_PATH_GLOBAL}"
 
 if [[ ! -f "\$IDF_PATH/export.sh" ]]; then
-  echo "ESP-IDF v6.0.1 was not found at: \$IDF_PATH" >&2
+  echo "ESP-IDF v5.5.4 was not found at: \$IDF_PATH" >&2
   exit 1
 fi
 
@@ -32,4 +32,4 @@ source "\$IDF_PATH/export.sh"
 EOF
 chmod +x "$ROOT/scripts/export-esp-idf.sh"
 
-echo "Configured ESP-IDF v6.0.1. Use: source scripts/export-esp-idf.sh"
+echo "Configured ESP-IDF v5.5.4. Use: source scripts/export-esp-idf.sh"
