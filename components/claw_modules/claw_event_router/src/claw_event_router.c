@@ -36,6 +36,8 @@ static const char *TAG = "claw_event_router";
 #define CLAW_EVENT_ROUTER_DEFAULT_OUTPUT_SIZE      2048
 #define CLAW_EVENT_ROUTER_DEFAULT_QUEUE_LEN          6
 #define CLAW_EVENT_ROUTER_DEFAULT_STACK            8192
+#define CLAW_EVENT_ROUTER_DEFAULT_AGENT_QUEUE_LEN    4
+#define CLAW_EVENT_ROUTER_DEFAULT_AGENT_STACK    16384
 #define CLAW_EVENT_ROUTER_DEFAULT_PRIO               5
 #define CLAW_EVENT_ROUTER_DEFAULT_SUBMIT          1000
 #define CLAW_EVENT_ROUTER_ID_SIZE                  64
@@ -69,12 +71,30 @@ typedef struct {
 } claw_event_router_text_match_context_t;
 
 typedef struct {
+    claw_session_policy_t session_policy;
+    uint32_t flags;
+    uint32_t request_id;
+    char source_cap[32];
+    char event_type[32];
+    char source_channel[16];
+    char source_chat_id[96];
+    char source_sender_id[96];
+    char source_message_id[96];
+    char event_id[48];
+    char target_channel[16];
+    char target_chat_id[96];
+    char *user_text;
+} claw_event_router_agent_job_t;
+
+typedef struct {
     bool initialized;
     bool started;
     bool stop_requested;
     SemaphoreHandle_t mutex;
     QueueHandle_t event_queue;
+    QueueHandle_t agent_queue;
     TaskHandle_t task_handle;
+    TaskHandle_t agent_task_handle;
     uint32_t next_request_id;
     char rules_path[192];
     size_t max_rules;
@@ -102,6 +122,7 @@ static esp_err_t claw_event_router_commit_rules(cJSON *root,
                                                 claw_event_router_rule_t *new_rules,
                                                 size_t new_rule_count);
 static void claw_event_router_free_rules(claw_event_router_rule_t *rules, size_t rule_count);
+static void claw_event_router_free_agent_job(claw_event_router_agent_job_t *job);
 
 static void claw_event_router_init_defaults(claw_event_router_runtime_t *runtime)
 {
@@ -124,6 +145,9 @@ static void claw_event_router_free_runtime(void)
     claw_event_router_free_rules(s_runtime->rules, s_runtime->rule_count);
     if (s_runtime->event_queue) {
         vQueueDelete(s_runtime->event_queue);
+    }
+    if (s_runtime->agent_queue) {
+        vQueueDelete(s_runtime->agent_queue);
     }
     if (s_runtime->mutex) {
         vSemaphoreDelete(s_runtime->mutex);
@@ -493,6 +517,15 @@ void claw_event_router_free_rule_list(claw_event_router_rule_t *rules, size_t ru
 static void claw_event_router_free_rules(claw_event_router_rule_t *rules, size_t rule_count)
 {
     claw_event_router_free_rule_list(rules, rule_count);
+}
+
+static void claw_event_router_free_agent_job(claw_event_router_agent_job_t *job)
+{
+    if (!job) {
+        return;
+    }
+    free(job->user_text);
+    memset(job, 0, sizeof(*job));
 }
 
 static bool claw_event_router_parse_caller(const char *value, claw_cap_caller_t *out)
@@ -1649,6 +1682,121 @@ static const char *claw_event_router_get_ctx_string(const cJSON *ctx,
     return item->valuestring;
 }
 
+static esp_err_t claw_event_router_enqueue_agent_job(const claw_event_t *event,
+                                                     const char *text,
+                                                     const char *target_channel,
+                                                     const char *target_chat_id,
+                                                     const char *session_policy,
+                                                     uint32_t request_id)
+{
+    claw_event_router_agent_job_t job = {0};
+
+    if (!event || !s_runtime || !s_runtime->agent_queue || !s_runtime->agent_task_handle) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    job.session_policy = event->session_policy;
+    if (session_policy && session_policy[0]) {
+        claw_event_router_parse_session_policy(session_policy, &job.session_policy);
+    }
+    job.flags = CLAW_CORE_REQUEST_FLAG_PUBLISH_OUT_MESSAGE |
+                CLAW_CORE_REQUEST_FLAG_PUBLISH_STAGE_MESSAGE |
+                CLAW_CORE_REQUEST_FLAG_SKIP_RESPONSE_QUEUE |
+                CLAW_CORE_REQUEST_FLAG_USER_INTERRUPT;
+    job.request_id = request_id;
+    job.user_text = strdup((text && text[0]) ? text : (event->text ? event->text : ""));
+    if (!job.user_text || !job.user_text[0]) {
+        claw_event_router_free_agent_job(&job);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    strlcpy(job.source_cap, event->source_cap, sizeof(job.source_cap));
+    strlcpy(job.event_type, event->event_type, sizeof(job.event_type));
+    strlcpy(job.source_channel, event->source_channel, sizeof(job.source_channel));
+    strlcpy(job.source_chat_id, event->chat_id, sizeof(job.source_chat_id));
+    strlcpy(job.source_sender_id, event->sender_id, sizeof(job.source_sender_id));
+    strlcpy(job.source_message_id, event->message_id, sizeof(job.source_message_id));
+    strlcpy(job.event_id, event->event_id, sizeof(job.event_id));
+    strlcpy(job.target_channel,
+            (target_channel && target_channel[0]) ? target_channel : event->source_channel,
+            sizeof(job.target_channel));
+    strlcpy(job.target_chat_id,
+            (target_chat_id && target_chat_id[0]) ? target_chat_id : event->chat_id,
+            sizeof(job.target_chat_id));
+
+    if (xQueueSend(s_runtime->agent_queue, &job, 0) != pdTRUE) {
+        claw_event_router_free_agent_job(&job);
+        return ESP_ERR_TIMEOUT;
+    }
+
+    return ESP_OK;
+}
+
+static esp_err_t claw_event_router_submit_agent_job(const claw_event_router_agent_job_t *job)
+{
+    claw_agent_mgr_root_input_t agent_input = {0};
+
+    if (!job || !job->user_text || !job->user_text[0]) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    agent_input.session_policy = job->session_policy;
+    agent_input.flags = job->flags;
+    agent_input.request_id = job->request_id;
+    agent_input.user_text = job->user_text;
+    agent_input.source_cap = job->source_cap;
+    agent_input.event_type = job->event_type;
+    agent_input.source_channel = job->source_channel;
+    agent_input.source_chat_id = job->source_chat_id;
+    agent_input.source_sender_id = job->source_sender_id;
+    agent_input.source_message_id = job->source_message_id;
+    agent_input.event_id = job->event_id;
+    agent_input.target_channel = job->target_channel;
+    agent_input.target_chat_id = job->target_chat_id;
+
+    return claw_agent_mgr_submit_root(&agent_input,
+                                      s_runtime->config.agent_submit_timeout_ms);
+}
+
+static void claw_event_router_agent_worker_task(void *arg)
+{
+    (void)arg;
+
+    ESP_LOGI(TAG, "agent submit worker task started");
+
+    while (!s_runtime->stop_requested) {
+        claw_event_router_agent_job_t job = {0};
+        esp_err_t err;
+
+        if (xQueueReceive(s_runtime->agent_queue, &job, pdMS_TO_TICKS(250)) != pdTRUE) {
+            continue;
+        }
+
+        err = claw_event_router_submit_agent_job(&job);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG,
+                     "agent submit failed request_id=%" PRIu32 " event=%s channel=%s chat=%s err=%s",
+                     job.request_id,
+                     job.event_id,
+                     job.target_channel,
+                     job.target_chat_id,
+                     esp_err_to_name(err));
+        }
+        claw_event_router_free_agent_job(&job);
+    }
+
+    while (s_runtime->agent_queue) {
+        claw_event_router_agent_job_t job = {0};
+        if (xQueueReceive(s_runtime->agent_queue, &job, 0) != pdTRUE) {
+            break;
+        }
+        claw_event_router_free_agent_job(&job);
+    }
+
+    s_runtime->agent_task_handle = NULL;
+    claw_task_delete(NULL);
+}
+
 static esp_err_t claw_event_router_execute_cap_action(
     const claw_event_router_rule_t *rule,
     const claw_event_router_action_t *action,
@@ -1749,9 +1897,8 @@ static esp_err_t claw_event_router_execute_agent_action(
     const char *target_channel = NULL;
     const char *target_chat_id = NULL;
     const char *session_policy = NULL;
-    claw_event_t agent_event = {0};
-    claw_agent_mgr_root_input_t agent_input = {0};
     char submit_output[32] = {0};
+    uint32_t request_id;
     esp_err_t err;
 
     input_root = cJSON_Parse(action->input_json);
@@ -1770,40 +1917,26 @@ static esp_err_t claw_event_router_execute_agent_action(
     target_chat_id = cJSON_GetStringValue(cJSON_GetObjectItem(rendered_input, "target_chat_id"));
     session_policy = cJSON_GetStringValue(cJSON_GetObjectItem(rendered_input, "session_policy"));
 
-    agent_event = *event;
-    if (session_policy && session_policy[0]) {
-        claw_event_router_parse_session_policy(session_policy, &agent_event.session_policy);
-    }
-
-    agent_input.session_policy = agent_event.session_policy;
-    agent_input.flags = CLAW_CORE_REQUEST_FLAG_PUBLISH_OUT_MESSAGE |
-                        CLAW_CORE_REQUEST_FLAG_PUBLISH_STAGE_MESSAGE |
-                        CLAW_CORE_REQUEST_FLAG_SKIP_RESPONSE_QUEUE |
-                        CLAW_CORE_REQUEST_FLAG_USER_INTERRUPT;
-    agent_input.request_id = s_runtime->next_request_id++;
-    agent_input.user_text = (text && text[0]) ? text : (event->text ? event->text : "");
-    agent_input.source_cap = event->source_cap;
-    agent_input.event_type = event->event_type;
-    agent_input.source_channel = event->source_channel;
-    agent_input.source_chat_id = event->chat_id;
-    agent_input.source_sender_id = event->sender_id;
-    agent_input.source_message_id = event->message_id;
-    agent_input.event_id = event->event_id;
-    agent_input.target_channel = (target_channel && target_channel[0]) ? target_channel : event->source_channel;
-    agent_input.target_chat_id = (target_chat_id && target_chat_id[0]) ? target_chat_id : event->chat_id;
-
-    err = claw_agent_mgr_submit_root(&agent_input,
-                                     s_runtime->config.agent_submit_timeout_ms);
+    request_id = s_runtime->next_request_id++;
+    err = claw_event_router_enqueue_agent_job(event,
+                                             text,
+                                             target_channel,
+                                             target_chat_id,
+                                             session_policy,
+                                             request_id);
 
     if (err == ESP_OK) {
-        snprintf(submit_output, sizeof(submit_output), "request_id=%" PRIu32, agent_input.request_id);
+        snprintf(submit_output, sizeof(submit_output), "request_id=%" PRIu32, request_id);
         claw_event_router_update_last_output(ctx,
                                              "agent",
-                                             agent_input.target_channel,
-                                             "submitted",
+                                             (target_channel && target_channel[0]) ? target_channel : event->source_channel,
+                                             "queued",
                                              submit_output);
     } else {
-        claw_event_router_update_last_output(ctx, "agent", agent_input.target_channel, "error",
+        claw_event_router_update_last_output(ctx,
+                                             "agent",
+                                             (target_channel && target_channel[0]) ? target_channel : event->source_channel,
+                                             "error",
                                              esp_err_to_name(err));
     }
 
@@ -2325,6 +2458,8 @@ esp_err_t claw_event_router_init(const claw_event_router_config_t *config)
 
     uint32_t queue_len = config && config->event_queue_len ? config->event_queue_len
                                                             : CLAW_EVENT_ROUTER_DEFAULT_QUEUE_LEN;
+    uint32_t agent_queue_len = config && config->agent_queue_len ? config->agent_queue_len
+                                                                  : CLAW_EVENT_ROUTER_DEFAULT_AGENT_QUEUE_LEN;
     if (queue_len > CLAW_EVENT_ROUTER_PENDING_TABLE_SIZE) {
         ESP_LOGE(TAG, "event_queue_len=%u exceeds pending table size %u",
                  (unsigned)queue_len,
@@ -2334,6 +2469,11 @@ esp_err_t claw_event_router_init(const claw_event_router_config_t *config)
     }
     s_runtime->event_queue = xQueueCreate(queue_len, sizeof(claw_event_t));
     if (!s_runtime->event_queue) {
+        claw_event_router_free_runtime();
+        return ESP_ERR_NO_MEM;
+    }
+    s_runtime->agent_queue = xQueueCreate(agent_queue_len, sizeof(claw_event_router_agent_job_t));
+    if (!s_runtime->agent_queue) {
         claw_event_router_free_runtime();
         return ESP_ERR_NO_MEM;
     }
@@ -2354,6 +2494,7 @@ esp_err_t claw_event_router_start(void)
 {
     BaseType_t task_ok;
     uint32_t stack_size;
+    uint32_t agent_stack_size;
     UBaseType_t priority;
     BaseType_t core;
 
@@ -2366,6 +2507,8 @@ esp_err_t claw_event_router_start(void)
 
     stack_size = s_runtime->config.task_stack_size ?
                  s_runtime->config.task_stack_size : CLAW_EVENT_ROUTER_DEFAULT_STACK;
+    agent_stack_size = s_runtime->config.agent_task_stack_size ?
+                       s_runtime->config.agent_task_stack_size : CLAW_EVENT_ROUTER_DEFAULT_AGENT_STACK;
     priority = s_runtime->config.task_priority ?
                s_runtime->config.task_priority : CLAW_EVENT_ROUTER_DEFAULT_PRIO;
     core = s_runtime->config.task_core;
@@ -2373,6 +2516,21 @@ esp_err_t claw_event_router_start(void)
                                                 s_runtime->config.agent_submit_timeout_ms :
                                                 CLAW_EVENT_ROUTER_DEFAULT_SUBMIT;
     s_runtime->stop_requested = false;
+
+    task_ok = claw_task_create(&(claw_task_config_t){
+                                   .name = "agent_submit",
+                                   .stack_size = agent_stack_size,
+                                   .priority = priority,
+                                   .core_id = core,
+                                   .stack_policy = CLAW_TASK_STACK_PREFER_PSRAM,
+                               },
+                               claw_event_router_agent_worker_task,
+                               NULL,
+                               &s_runtime->agent_task_handle);
+    if (task_ok != pdPASS) {
+        s_runtime->agent_task_handle = NULL;
+        return ESP_FAIL;
+    }
 
     task_ok = claw_task_create(&(claw_task_config_t){
                                    .name = "event_router",
@@ -2386,6 +2544,10 @@ esp_err_t claw_event_router_start(void)
                                &s_runtime->task_handle);
     if (task_ok != pdPASS) {
         s_runtime->task_handle = NULL;
+        s_runtime->stop_requested = true;
+        while (s_runtime->agent_task_handle) {
+            vTaskDelay(pdMS_TO_TICKS(20));
+        }
         return ESP_FAIL;
     }
 
@@ -2397,17 +2559,21 @@ esp_err_t claw_event_router_stop(void)
 {
     TickType_t deadline;
 
-    if (!s_runtime || !s_runtime->started || !s_runtime->task_handle) {
+    if (!s_runtime || !s_runtime->initialized) {
+        return ESP_OK;
+    }
+    if (!s_runtime->started && !s_runtime->task_handle && !s_runtime->agent_task_handle) {
         return ESP_OK;
     }
 
     s_runtime->stop_requested = true;
     deadline = xTaskGetTickCount() + pdMS_TO_TICKS(5000);
-    while (s_runtime->task_handle && xTaskGetTickCount() < deadline) {
+    while ((s_runtime->task_handle || s_runtime->agent_task_handle) &&
+           xTaskGetTickCount() < deadline) {
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 
-    return s_runtime->task_handle ? ESP_ERR_TIMEOUT : ESP_OK;
+    return (s_runtime->task_handle || s_runtime->agent_task_handle) ? ESP_ERR_TIMEOUT : ESP_OK;
 }
 
 esp_err_t claw_event_router_reload(void)
