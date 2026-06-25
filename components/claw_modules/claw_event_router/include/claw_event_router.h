@@ -32,6 +32,8 @@ typedef struct {
     size_t cap_output_size;
     uint32_t event_queue_len;
     uint32_t task_stack_size;
+    uint32_t agent_queue_len;
+    uint32_t agent_task_stack_size;
     UBaseType_t task_priority;
     BaseType_t task_core;
     uint32_t agent_submit_timeout_ms;

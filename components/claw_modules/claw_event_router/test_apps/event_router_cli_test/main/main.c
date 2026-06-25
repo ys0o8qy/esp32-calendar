@@ -246,10 +246,10 @@ static bool run_cli_and_check(const char *label,
     return passed;
 }
 
-static bool run_agent_without_submit_check(void)
+static bool run_agent_queue_isolation_check(void)
 {
     static const char *agent_rule_json =
-        "{\"id\":\"agent_missing_submit\",\"enabled\":true,\"consume_on_match\":true,"
+        "{\"id\":\"agent_queue_isolation\",\"enabled\":true,\"consume_on_match\":true,"
         "\"match\":{\"event_type\":\"message\",\"content_type\":\"text\",\"source_cap\":\"test_source\","
         "\"channel\":\"cli\",\"chat_id\":\"room_agent\",\"text\":\"agent please\"},"
         "\"actions\":[{\"type\":\"run_agent\"}]}";
@@ -265,7 +265,7 @@ static bool run_agent_without_submit_check(void)
     esp_err_t err;
     bool passed;
 
-    ESP_LOGI(TAG, "[RUN] run_agent_without_submit");
+    ESP_LOGI(TAG, "[RUN] run_agent_queue_isolation");
     err = claw_event_router_add_rule_json(agent_rule_json);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to add run_agent rule: %s", esp_err_to_name(err));
@@ -274,23 +274,31 @@ static bool run_agent_without_submit_check(void)
 
     event.text = strdup("agent please");
     if (!event.text) {
-        (void)claw_event_router_delete_rule("agent_missing_submit");
+        (void)claw_event_router_delete_rule("agent_queue_isolation");
         return false;
     }
 
     err = claw_event_router_handle_event(&event, &result);
-    passed = err == ESP_ERR_INVALID_STATE || result.last_error == ESP_ERR_INVALID_STATE;
+    passed = err == ESP_OK &&
+             result.matched &&
+             strcmp(result.first_rule_id, "agent_queue_isolation") == 0 &&
+             result.route == CLAW_CAP_EVENT_ROUTE_CONSUMED &&
+             result.action_count == 1 &&
+             result.failed_actions == 0 &&
+             result.last_error == ESP_OK;
     if (!passed) {
         ESP_LOGE(TAG,
-                 "run_agent without submit returned err=%s last_error=%s failed_actions=%d",
+                 "run_agent queue isolation returned err=%s last_error=%s action_count=%d failed_actions=%d ack=%s",
                  esp_err_to_name(err),
                  esp_err_to_name(result.last_error),
-                 result.failed_actions);
+                 result.action_count,
+                 result.failed_actions,
+                 result.ack);
     }
 
     claw_event_free(&event);
-    (void)claw_event_router_delete_rule("agent_missing_submit");
-    ESP_LOGI(TAG, "[%s] run_agent_without_submit", passed ? "PASS" : "FAIL");
+    (void)claw_event_router_delete_rule("agent_queue_isolation");
+    ESP_LOGI(TAG, "[%s] run_agent_queue_isolation", passed ? "PASS" : "FAIL");
     return passed;
 }
 
@@ -389,7 +397,7 @@ static bool run_smoke_suite(void)
                            NULL,
                            0) && ok;
 
-    ok = run_agent_without_submit_check() && ok;
+    ok = run_agent_queue_isolation_check() && ok;
 
     return ok;
 }

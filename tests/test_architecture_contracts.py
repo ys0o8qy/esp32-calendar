@@ -111,6 +111,20 @@ class ArchitectureContractTests(unittest.TestCase):
         self.assertIn("scripts/check-render-png.py", render_script)
         self.assertIn("./scripts/render-check.sh build-sim/calendar-render.png", dev_verify)
 
+    def test_event_router_run_agent_is_queued_off_router_task_stack(self):
+        router = (ROOT / "components/claw_modules/claw_event_router/src/claw_event_router.c").read_text(encoding="utf-8")
+        app_claw = (ROOT / "components/common/app_claw/app_claw.c").read_text(encoding="utf-8")
+        execute_agent_start = router.index("static esp_err_t claw_event_router_execute_agent_action")
+        execute_agent_end = router.index("static esp_err_t claw_event_router_execute_send_message_action")
+        execute_agent_body = router[execute_agent_start:execute_agent_end]
+
+        self.assertIn("QueueHandle_t agent_queue", router)
+        self.assertIn("TaskHandle_t agent_task_handle", router)
+        self.assertIn("claw_event_router_agent_worker_task", router)
+        self.assertIn("claw_event_router_enqueue_agent_job", execute_agent_body)
+        self.assertNotIn("claw_agent_mgr_submit_root", execute_agent_body)
+        self.assertIn(".task_stack_size = 16 * 1024", app_claw)
+
     def test_python_bytecode_is_removed_and_ignored(self):
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
         result = subprocess.run(
