@@ -172,11 +172,11 @@ static void cap_system_notify_time_sync_success(bool had_valid_time)
 static void cap_system_time_sync_service_task(void *arg)
 {
     char output[256];
+    bool had_valid_time = cap_system_is_time_valid();
 
     (void)arg;
 
     while (s_time_service.running) {
-        bool time_valid;
         uint32_t delay_ms;
 
         if (!cap_system_time_network_ready()) {
@@ -185,26 +185,19 @@ static void cap_system_time_sync_service_task(void *arg)
             continue;
         }
 
-        time_valid = cap_system_is_time_valid();
-        if (!time_valid) {
-            esp_err_t err;
+        esp_err_t err;
 
-            output[0] = '\0';
-            err = cap_system_sync_time_now(output, sizeof(output));
-            if (err == ESP_OK) {
-                ESP_LOGI(TAG, "Time sync succeeded: %s", output);
-                cap_system_notify_time_sync_success(false);
-                break;
-            }
-
-            ESP_LOGW(TAG, "Time sync failed: %s", esp_err_to_name(err));
-            delay_ms = s_time_service.config.sync_retry_ms;
-            vTaskDelay(pdMS_TO_TICKS(delay_ms));
-            continue;
+        output[0] = '\0';
+        err = cap_system_sync_time_now(output, sizeof(output));
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Time sync succeeded: %s", output);
+            cap_system_notify_time_sync_success(had_valid_time);
+            break;
         }
 
-        cap_system_notify_time_sync_success(false);
-        break;
+        ESP_LOGW(TAG, "Time sync failed: %s", esp_err_to_name(err));
+        delay_ms = s_time_service.config.sync_retry_ms;
+        vTaskDelay(pdMS_TO_TICKS(delay_ms));
     }
 
     s_time_service.running = false;
@@ -803,11 +796,6 @@ esp_err_t cap_system_time_sync_service_start(const cap_system_time_sync_service_
     }
     if (s_time_service.config.sync_retry_ms == 0) {
         s_time_service.config.sync_retry_ms = CAP_SYSTEM_DEFAULT_SYNC_RETRY_MS;
-    }
-
-    if (cap_system_is_time_valid()) {
-        cap_system_notify_time_sync_success(false);
-        return ESP_OK;
     }
 
     s_time_service.running = true;

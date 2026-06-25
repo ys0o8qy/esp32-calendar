@@ -5,6 +5,7 @@
  */
 #include "app_claw.h"
 #include "app_fs.h"
+#include "calendar_board_data.h"
 #include "calendar_home.h"
 #include "claw_version.h"
 #include "claw_paths.h"
@@ -94,6 +95,32 @@ static void on_wifi_state_changed(bool connected, void *user_ctx)
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Failed to update network emote: %s", esp_err_to_name(err));
     }
+}
+
+static bool main_time_sync_network_ready(void *user_ctx)
+{
+    (void)user_ctx;
+
+    wifi_manager_status_t status = {0};
+    wifi_manager_get_status(&status);
+    return status.sta_connected;
+}
+
+static void main_time_sync_success(bool had_valid_time, void *user_ctx)
+{
+    (void)user_ctx;
+
+    esp_err_t err = calendar_board_data_sync_rtc_from_system_time();
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG,
+                 "RTC update after SNTP sync failed: %s",
+                 esp_err_to_name(err));
+        return;
+    }
+
+    ESP_LOGI(TAG,
+             "RTC updated after SNTP sync (had_valid_time=%d)",
+             had_valid_time);
 }
 
 static esp_err_t main_load_config(app_config_t *config)
@@ -418,6 +445,8 @@ void app_main(void)
     }
 
     ESP_ERROR_CHECK(app_claw_set_save_config_callback(main_save_claw_config, NULL));
+    ESP_ERROR_CHECK(app_claw_set_time_sync_network_ready_callback(main_time_sync_network_ready, NULL));
+    ESP_ERROR_CHECK(app_claw_set_time_sync_success_callback(main_time_sync_success, NULL));
     ESP_ERROR_CHECK(app_claw_start(s_claw_config));
 #if CONFIG_APP_CLAW_CAP_IM_LOCAL
     ESP_ERROR_CHECK(http_server_webim_bind_im());

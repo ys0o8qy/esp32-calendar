@@ -22,6 +22,7 @@ typedef struct {
 
 esp_err_t calendar_board_data_init(void);
 esp_err_t calendar_board_data_read(calendar_board_snapshot_t *snapshot);
+esp_err_t calendar_board_data_sync_rtc_from_system_time(void);
 
 #ifdef __cplusplus
 }

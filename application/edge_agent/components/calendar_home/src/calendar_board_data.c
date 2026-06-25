@@ -37,6 +37,9 @@ static bool s_shtc3_available;
 static bool s_rtc_available;
 static bool s_created_i2c_bus;
 static bool s_rtc_synced_this_boot;
+static bool s_system_time_from_rtc_fallback;
+
+static bool calendar_get_system_time(struct tm *local_time);
 
 static esp_err_t calendar_i2c_wait_done(void)
 {
@@ -235,6 +238,29 @@ static esp_err_t calendar_write_rtc_time(const struct tm *timeinfo)
 #endif
 }
 
+static esp_err_t calendar_sync_rtc_from_system_time(void)
+{
+#if CONFIG_CALENDAR_HOME_ENABLE_RTC
+    struct tm local_time = {0};
+
+    if (!s_rtc_available || s_rtc_dev == NULL || s_created_i2c_bus) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (!calendar_get_system_time(&local_time)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_err_t ret = calendar_write_rtc_time(&local_time);
+    if (ret == ESP_OK) {
+        s_rtc_synced_this_boot = true;
+        s_system_time_from_rtc_fallback = false;
+    }
+    return ret;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
 static bool calendar_get_system_time(struct tm *local_time)
 {
     time_t now = time(NULL);
@@ -265,7 +291,7 @@ static esp_err_t calendar_read_shtc3(float *temperature_c, float *humidity_perce
 
     uint16_t raw_temp = ((uint16_t)data[0] << 8) | data[1];
     uint16_t raw_humidity = ((uint16_t)data[3] << 8) | data[4];
-    *temperature_c = 175.0f * (float)raw_temp / 65536.0f - 45.0f - 4.0f;
+    *temperature_c = 175.0f * (float)raw_temp / 65536.0f - 45.0f;
     *humidity_percent = 100.0f * (float)raw_humidity / 65536.0f;
     if (*humidity_percent < 0.0f) {
         *humidity_percent = 0.0f;
@@ -370,6 +396,12 @@ esp_err_t calendar_board_data_init(void)
     return ESP_OK;
 }
 
+esp_err_t calendar_board_data_sync_rtc_from_system_time(void)
+{
+    ESP_RETURN_ON_ERROR(calendar_board_data_init(), TAG, "board data init failed");
+    return calendar_sync_rtc_from_system_time();
+}
+
 esp_err_t calendar_board_data_read(calendar_board_snapshot_t *snapshot)
 {
     ESP_RETURN_ON_FALSE(snapshot != NULL, ESP_ERR_INVALID_ARG, TAG, "snapshot is NULL");
@@ -381,8 +413,12 @@ esp_err_t calendar_board_data_read(calendar_board_snapshot_t *snapshot)
 
     if (calendar_get_system_time(&snapshot->local_time)) {
         snapshot->time_valid = true;
-        if (s_rtc_available && !s_created_i2c_bus && !s_rtc_synced_this_boot) {
-            esp_err_t ret = calendar_write_rtc_time(&snapshot->local_time);
+        snapshot->rtc_fallback_used = s_system_time_from_rtc_fallback;
+        if (s_rtc_available &&
+            !s_created_i2c_bus &&
+            !s_rtc_synced_this_boot &&
+            !s_system_time_from_rtc_fallback) {
+            esp_err_t ret = calendar_sync_rtc_from_system_time();
             if (ret == ESP_OK) {
                 s_rtc_synced_this_boot = true;
             } else {
@@ -398,6 +434,7 @@ esp_err_t calendar_board_data_read(calendar_board_snapshot_t *snapshot)
         settimeofday(&tv, NULL);
         snapshot->time_valid = true;
         snapshot->rtc_fallback_used = true;
+        s_system_time_from_rtc_fallback = true;
     } else {
         calendar_set_unknown_local_time(&snapshot->local_time);
     }

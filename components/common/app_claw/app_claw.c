@@ -111,6 +111,10 @@ static app_claw_config_t s_current_config;
 static bool s_current_config_valid;
 static app_claw_save_config_fn s_save_config;
 static void *s_save_config_user_ctx;
+static app_claw_time_sync_network_ready_fn s_time_sync_network_ready;
+static void *s_time_sync_network_ready_user_ctx;
+static app_claw_time_sync_success_fn s_time_sync_success;
+static void *s_time_sync_success_user_ctx;
 
 static esp_err_t app_claw_ensure_config_lock(void)
 {
@@ -144,6 +148,22 @@ esp_err_t app_claw_set_save_config_callback(app_claw_save_config_fn save_config,
     s_save_config = save_config;
     s_save_config_user_ctx = user_ctx;
     xSemaphoreGive(s_config_lock);
+    return ESP_OK;
+}
+
+esp_err_t app_claw_set_time_sync_network_ready_callback(app_claw_time_sync_network_ready_fn network_ready,
+                                                        void *user_ctx)
+{
+    s_time_sync_network_ready = network_ready;
+    s_time_sync_network_ready_user_ctx = user_ctx;
+    return ESP_OK;
+}
+
+esp_err_t app_claw_set_time_sync_success_callback(app_claw_time_sync_success_fn on_sync_success,
+                                                  void *user_ctx)
+{
+    s_time_sync_success = on_sync_success;
+    s_time_sync_success_user_ctx = user_ctx;
     return ESP_OK;
 }
 
@@ -339,11 +359,26 @@ static void app_claw_fill_core_config(const app_claw_config_t *config,
 }
 #endif
 
-#if CONFIG_APP_CLAW_CAP_SCHEDULER && CONFIG_APP_CLAW_CAP_SYSTEM
-static void app_time_sync_success(bool had_valid_time, void *ctx)
+#if CONFIG_APP_CLAW_CAP_SYSTEM
+static bool app_claw_time_sync_network_ready(void *ctx)
 {
     (void)ctx;
 
+    if (!s_time_sync_network_ready) {
+        return true;
+    }
+    return s_time_sync_network_ready(s_time_sync_network_ready_user_ctx);
+}
+
+static void app_claw_time_sync_success(bool had_valid_time, void *ctx)
+{
+    (void)ctx;
+
+    if (s_time_sync_success) {
+        s_time_sync_success(had_valid_time, s_time_sync_success_user_ctx);
+    }
+
+#if CONFIG_APP_CLAW_CAP_SCHEDULER
     if (!had_valid_time) {
         esp_err_t err = cap_scheduler_handle_time_sync();
 
@@ -354,6 +389,7 @@ static void app_time_sync_success(bool had_valid_time, void *ctx)
             ESP_LOGI(TAG, "Scheduler rebased after first successful time sync");
         }
     }
+#endif
 }
 #endif
 
@@ -515,12 +551,8 @@ esp_err_t app_claw_start(const app_claw_config_t *config)
 
 #if CONFIG_APP_CLAW_CAP_SYSTEM
     ESP_ERROR_CHECK(cap_system_time_sync_service_start(&(cap_system_time_sync_service_config_t) {
-                        .network_ready = NULL,
-#if CONFIG_APP_CLAW_CAP_SCHEDULER
-                        .on_sync_success = app_time_sync_success,
-#else
-                        .on_sync_success = NULL,
-#endif
+                        .network_ready = app_claw_time_sync_network_ready,
+                        .on_sync_success = app_claw_time_sync_success,
                     }));
 #endif
 
