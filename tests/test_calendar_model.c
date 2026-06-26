@@ -17,6 +17,7 @@ static void test_status_text_mentions_board_data_sources(void)
     assert(strstr(buffer, "RTC") != NULL);
     assert(strstr(buffer, "SHTC3") != NULL);
     assert(strstr(buffer, "已读取") != NULL);
+    assert(strstr(buffer, "麦克风 开启") != NULL);
 }
 
 static void test_sample_model_initializes_board_data_fields(void)
@@ -30,9 +31,22 @@ static void test_sample_model_initializes_board_data_fields(void)
     assert(model.wifi_configured == true);
     assert(model.wifi_connected == true);
     assert(model.battery_valid == true);
+    assert(model.mic_muted == false);
+    assert(model.assistant_state == CALENDAR_ASSISTANT_IDLE);
+    assert(strcmp(model.assistant_detail, "") == 0);
     assert(model.battery_percent == 82);
     assert(strcmp(model.day_hint, "时间已同步") == 0);
     assert(model.event_day_count == 1);
+}
+
+static void test_assistant_state_text(void)
+{
+    assert(strcmp(calendar_model_assistant_state_text(CALENDAR_ASSISTANT_IDLE), "待命") == 0);
+    assert(strcmp(calendar_model_assistant_state_text(CALENDAR_ASSISTANT_LISTENING), "正在听") == 0);
+    assert(strcmp(calendar_model_assistant_state_text(CALENDAR_ASSISTANT_THINKING), "思考中") == 0);
+    assert(strcmp(calendar_model_assistant_state_text(CALENDAR_ASSISTANT_SPEAKING), "回复中") == 0);
+    assert(strcmp(calendar_model_assistant_state_text(CALENDAR_ASSISTANT_DONE), "已完成") == 0);
+    assert(strcmp(calendar_model_assistant_state_text(CALENDAR_ASSISTANT_ERROR), "出错") == 0);
 }
 
 static void test_iso_week_number_handles_year_boundaries(void)
@@ -47,6 +61,7 @@ int main(void)
 {
     test_status_text_mentions_board_data_sources();
     test_sample_model_initializes_board_data_fields();
+    test_assistant_state_text();
     test_iso_week_number_handles_year_boundaries();
     test_png_writer();
     puts("calendar_model tests passed");

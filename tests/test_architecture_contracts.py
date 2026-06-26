@@ -116,8 +116,13 @@ class ArchitectureContractTests(unittest.TestCase):
         sim_source = (ROOT / "sim/main_sdl.c").read_text(encoding="utf-8")
         render_script = (ROOT / "scripts/render-check.sh").read_text(encoding="utf-8")
         dev_verify = (ROOT / "scripts/dev-verify.sh").read_text(encoding="utf-8")
+        component_cmake = (CALENDAR_HOME / "CMakeLists.txt").read_text(encoding="utf-8")
 
         self.assertIn("../application/edge_agent/components/calendar_home/src/calendar_ui.c", sim_cmake)
+        self.assertIn("../application/edge_agent/components/calendar_home/src/calendar_font_digits_48.c", sim_cmake)
+        self.assertIn("../application/edge_agent/components/calendar_home/src/calendar_font_digits_28.c", sim_cmake)
+        self.assertIn('"src/calendar_font_digits_48.c"', component_cmake)
+        self.assertIn('"src/calendar_font_digits_28.c"', component_cmake)
         self.assertIn("calendar_model_from_host_time", sim_source)
         self.assertIn("calendar_ui_update(&ui, &model);", sim_source)
         self.assertIn("scripts/check-render-png.py", render_script)
