@@ -66,6 +66,9 @@ calendar_model_t calendar_model_sample(void)
         .wifi_configured = true,
         .wifi_connected = true,
         .battery_valid = true,
+        .mic_muted = false,
+        .assistant_state = CALENDAR_ASSISTANT_IDLE,
+        .assistant_detail = "",
         .weekday_text = "周二",
         .day_hint = "时间已同步",
         .temp_c = 26,
@@ -87,10 +90,30 @@ void calendar_model_status_text(const calendar_model_t *model, char *buffer, siz
     snprintf(
         buffer,
         buffer_size,
-        "RTC %s%s  SHTC3 %s",
+        "RTC %s%s  SHTC3 %s  麦克风 %s",
         model->rtc_available ? "可用" : "未就绪",
         model->rtc_fallback_used ? "/保时" : "",
-        model->indoor_valid ? "已读取" : (model->shtc3_available ? "待读取" : "未就绪"));
+        model->indoor_valid ? "已读取" : (model->shtc3_available ? "待读取" : "未就绪"),
+        model->mic_muted ? "关闭" : "开启");
+}
+
+const char *calendar_model_assistant_state_text(calendar_assistant_state_t state)
+{
+    switch (state) {
+    case CALENDAR_ASSISTANT_LISTENING:
+        return "正在听";
+    case CALENDAR_ASSISTANT_THINKING:
+        return "思考中";
+    case CALENDAR_ASSISTANT_SPEAKING:
+        return "回复中";
+    case CALENDAR_ASSISTANT_DONE:
+        return "已完成";
+    case CALENDAR_ASSISTANT_ERROR:
+        return "出错";
+    case CALENDAR_ASSISTANT_IDLE:
+    default:
+        return "待命";
+    }
 }
 
 int calendar_model_iso_week(int year, int month, int day)

@@ -8,6 +8,8 @@ idf_component_register(
         "src/calendar_font_zh.c"
         "src/calendar_font_fusion_28.c"
         "src/calendar_font_fusion_48.c"
+        "src/calendar_font_digits_28.c"
+        "src/calendar_font_digits_48.c"
     INCLUDE_DIRS
         "include"
         "src"

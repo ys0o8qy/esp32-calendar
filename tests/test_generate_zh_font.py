@@ -71,13 +71,66 @@ class GenerateZhFontTests(unittest.TestCase):
         self.assertIn("°", variants["calendar_font_fusion_28"]["symbols"])
         self.assertIn("%", variants["calendar_font_fusion_28"]["symbols"])
 
+    def test_generates_bold_digit_fonts_for_rlcd_large_numbers(self):
+        generator = load_generator()
+
+        variants = {variant["name"]: variant for variant in generator.NUMERIC_FONT_VARIANTS}
+        self.assertIn("calendar_font_digits_48", variants)
+        self.assertIn("calendar_font_digits_28", variants)
+        self.assertEqual(
+            variants["calendar_font_digits_48"]["output"].name,
+            "calendar_font_digits_48.c",
+        )
+        self.assertEqual(
+            variants["calendar_font_digits_28"]["output"].name,
+            "calendar_font_digits_28.c",
+        )
+        self.assertIn(":", variants["calendar_font_digits_48"]["symbols"])
+        self.assertIn("°", variants["calendar_font_digits_28"]["symbols"])
+        self.assertIn("%", variants["calendar_font_digits_28"]["symbols"])
+        self.assertGreater(variants["calendar_font_digits_48"]["stroke"], 4)
+        self.assertGreater(variants["calendar_font_digits_28"]["stroke"], 2)
+        self.assertGreaterEqual(variants["calendar_font_digits_28"]["char_widths"]["°"], 9)
+
+    def test_bold_digit_font_renderer_packs_1bpp_glyphs(self):
+        generator = load_generator()
+
+        glyph = generator.render_digit_glyph("8", width=22, height=38, stroke=6)
+        packed = generator.pack_1bpp_bitmap(glyph)
+
+        self.assertEqual(len(glyph), 38)
+        self.assertTrue(all(len(row) == 22 for row in glyph))
+        self.assertGreater(sum(sum(row) for row in glyph), 22 * 38 * 0.35)
+        self.assertEqual(len(packed), (22 * 38 + 7) // 8)
+
+    def test_bold_digit_font_renderer_draws_unit_symbols_readably(self):
+        generator = load_generator()
+
+        percent = generator.render_digit_glyph("%", width=13, height=22, stroke=4)
+        degree = generator.render_digit_glyph("°", width=9, height=22, stroke=4)
+        rising_diag_hits = sum(
+            percent[row][round((len(percent[0]) - 1) * (len(percent) - 1 - row) / (len(percent) - 1))]
+            for row in range(len(percent))
+        )
+        falling_diag_hits = sum(
+            percent[row][round((len(percent[0]) - 1) * row / (len(percent) - 1))]
+            for row in range(len(percent))
+        )
+
+        self.assertGreater(rising_diag_hits, falling_diag_hits)
+        self.assertGreater(sum(sum(row) for row in percent[:7]), 14)
+        self.assertGreater(sum(sum(row) for row in percent[-7:]), 14)
+        self.assertGreater(sum(sum(row) for row in degree[:10]), 18)
+
     def test_generate_font_runs_lvgl_converter_and_writes_header(self):
         generator = load_generator()
 
         with mock.patch.object(generator.subprocess, "run") as run:
-            generator.generate_font(["A", "天"])
+            with mock.patch.object(generator, "write_numeric_font_file") as write_numeric:
+                generator.generate_font(["A", "天"])
 
         self.assertEqual(run.call_count, 3)
+        self.assertEqual(write_numeric.call_count, 2)
         self.assertTrue(all(call.args[0][0] == "lv_font_conv" for call in run.call_args_list))
         self.assertTrue(all(call.kwargs["cwd"] == generator.ROOT for call in run.call_args_list))
         commands = [call.args[0] for call in run.call_args_list]
@@ -90,11 +143,15 @@ class GenerateZhFontTests(unittest.TestCase):
                 "application/edge_agent/components/calendar_home/src/calendar_font_fusion_28.c",
             ],
         )
+        generated_names = [call.args[0]["name"] for call in write_numeric.call_args_list]
+        self.assertEqual(generated_names, ["calendar_font_digits_48", "calendar_font_digits_28"])
         self.assertTrue(generator.OUTPUT_H.exists())
         header = generator.OUTPUT_H.read_text(encoding="utf-8")
         self.assertIn("LV_FONT_DECLARE(calendar_font_zh_16);", header)
         self.assertIn("LV_FONT_DECLARE(calendar_font_fusion_48);", header)
         self.assertIn("LV_FONT_DECLARE(calendar_font_fusion_28);", header)
+        self.assertIn("LV_FONT_DECLARE(calendar_font_digits_48);", header)
+        self.assertIn("LV_FONT_DECLARE(calendar_font_digits_28);", header)
 
 
 if __name__ == "__main__":

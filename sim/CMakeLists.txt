@@ -30,6 +30,8 @@ add_executable(calendar_sim
     ../application/edge_agent/components/calendar_home/src/calendar_font_zh.c
     ../application/edge_agent/components/calendar_home/src/calendar_font_fusion_28.c
     ../application/edge_agent/components/calendar_home/src/calendar_font_fusion_48.c
+    ../application/edge_agent/components/calendar_home/src/calendar_font_digits_28.c
+    ../application/edge_agent/components/calendar_home/src/calendar_font_digits_48.c
     ../application/edge_agent/components/calendar_home/src/calendar_theme.c
     ../application/edge_agent/components/calendar_home/src/calendar_ui.c
 )
