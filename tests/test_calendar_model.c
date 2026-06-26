@@ -27,6 +27,11 @@ static void test_sample_model_initializes_board_data_fields(void)
     assert(model.rtc_available == true);
     assert(model.shtc3_available == true);
     assert(model.indoor_valid == true);
+    assert(model.wifi_configured == true);
+    assert(model.wifi_connected == true);
+    assert(model.battery_valid == true);
+    assert(model.battery_percent == 82);
+    assert(strcmp(model.day_hint, "时间已同步") == 0);
     assert(model.event_day_count == 1);
 }
 

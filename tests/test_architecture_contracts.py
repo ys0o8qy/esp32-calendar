@@ -66,6 +66,18 @@ class ArchitectureContractTests(unittest.TestCase):
         self.assertNotIn("esp_netif_sntp_init", board_data)
         self.assertNotIn("CONFIG_CALENDAR_WIFI", board_data)
 
+    def test_calendar_home_reads_wifi_status_into_model_boundary(self):
+        home = (CALENDAR_HOME / "src/calendar_home.c").read_text(encoding="utf-8")
+        cmake = (CALENDAR_HOME / "CMakeLists.txt").read_text(encoding="utf-8")
+        manifest = (CALENDAR_HOME / "idf_component.yml").read_text(encoding="utf-8")
+
+        self.assertIn('#include "wifi_manager.h"', home)
+        self.assertIn("wifi_manager_status_t wifi_status", home)
+        self.assertIn("wifi_manager_get_status(&wifi_status)", home)
+        self.assertIn("model.wifi_connected = wifi_status.sta_connected;", home)
+        self.assertIn("wifi_manager", cmake)
+        self.assertIn("wifi_manager:", manifest)
+
     def test_self_built_voice_tts_and_old_rlcd_bridge_are_removed(self):
         removed_paths = [
             "components/voice_assistant_sdk",

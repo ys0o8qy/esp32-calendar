@@ -19,4 +19,5 @@ idf_component_register(
         display_arbiter
         lua_module_lvgl
         lvgl
+        wifi_manager
 )

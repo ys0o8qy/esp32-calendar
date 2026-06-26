@@ -16,10 +16,14 @@ typedef struct {
     bool rtc_fallback_used;
     bool shtc3_available;
     bool indoor_valid;
+    bool wifi_configured;
+    bool wifi_connected;
+    bool battery_valid;
     const char *weekday_text;
     const char *day_hint;
     int temp_c;
     int humidity_percent;
+    int battery_percent;
     int event_days[CALENDAR_MAX_EVENTS];
     size_t event_day_count;
 } calendar_model_t;

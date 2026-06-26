@@ -15,7 +15,7 @@ config CALENDAR_HOME_I2C_PORT
 
 config CALENDAR_HOME_REFRESH_MS
     int "Calendar refresh interval in milliseconds"
-    default 30000
+    default 1000
     range 1000 3600000
 
 endmenu

@@ -4,6 +4,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 UI_SOURCE = ROOT / "application/edge_agent/components/calendar_home/src/calendar_ui.c"
+KCONFIG_SOURCE = ROOT / "application/edge_agent/components/calendar_home/Kconfig"
 
 
 class CalendarUiLayoutTests(unittest.TestCase):
@@ -29,12 +30,30 @@ class CalendarUiLayoutTests(unittest.TestCase):
     def test_indoor_temperature_and_humidity_are_the_only_weather_data(self):
         source = UI_SOURCE.read_text(encoding="utf-8")
 
-        self.assertIn('"室内"', source)
-        self.assertIn('"湿度 %d%%"', source)
-        self.assertIn('snprintf(text, sizeof(text), "%d°C", model->temp_c);', source)
+        self.assertIn('"温度"', source)
+        self.assertIn('"湿度"', source)
+        self.assertIn('snprintf(temp_text, sizeof(temp_text), "%d°C", model->temp_c);', source)
+        self.assertIn('snprintf(humidity_text, sizeof(humidity_text), "%d%%", model->humidity_percent);', source)
+        self.assertNotIn('"湿度 %d%%"', source)
+        self.assertNotIn('"室内"', source)
         self.assertNotIn("weather_summary", source)
         self.assertNotIn("temp_low_c", source)
         self.assertNotIn("temp_high_c", source)
+
+    def test_temperature_and_humidity_use_large_side_by_side_tiles(self):
+        source = UI_SOURCE.read_text(encoding="utf-8")
+
+        self.assertIn("add_sensor_tile(parent, 18, 172, \"温度\"", source)
+        self.assertIn("add_sensor_tile(parent, 102, 172, \"湿度\"", source)
+        self.assertIn("lv_obj_set_style_text_font(value, &calendar_font_fusion_28, 0)", source)
+        self.assertNotIn("add_indoor_panel", source)
+        self.assertNotIn('make_label_box(panel, "湿度 --%", 8, 52, 130, 18)', source)
+
+    def test_calendar_home_refreshes_often_enough_for_displayed_clock(self):
+        source = KCONFIG_SOURCE.read_text(encoding="utf-8")
+
+        self.assertIn("config CALENDAR_HOME_REFRESH_MS", source)
+        self.assertIn("default 1000", source)
 
     def test_large_numeric_labels_use_fusion_pixel_font(self):
         source = UI_SOURCE.read_text(encoding="utf-8")
@@ -54,12 +73,13 @@ class CalendarUiLayoutTests(unittest.TestCase):
         self.assertIn("lv_obj_set_pos(bar, 10, 258)", source)
         self.assertIn("lv_obj_set_size(bar, 380, 34)", source)
 
-    def test_top_status_is_short_and_not_wifi_battery_driven(self):
+    def test_top_status_shows_wifi_and_battery_instead_of_time_source(self):
         source = UI_SOURCE.read_text(encoding="utf-8")
 
-        self.assertIn("model->rtc_fallback_used", source)
-        self.assertNotIn("Wi-Fi%s", source)
-        self.assertNotIn("battery_percent", source)
+        self.assertIn("add_top_status(ui->screen, model);", source)
+        self.assertIn('"WiFi %s"', source)
+        self.assertIn('model->battery_valid ? "电量 %d%%" : "电量 --"', source)
+        self.assertNotIn('model->rtc_fallback_used ? "RTC保时" : "系统时间"', source)
         self.assertNotIn("weather_updated_at", source)
 
     def test_calendar_panel_keeps_stable_rlcd_dimensions(self):

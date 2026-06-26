@@ -69,6 +69,7 @@ class GenerateZhFontTests(unittest.TestCase):
 
         variants = {variant["name"]: variant for variant in generator.LARGE_FONT_VARIANTS}
         self.assertIn("°", variants["calendar_font_fusion_28"]["symbols"])
+        self.assertIn("%", variants["calendar_font_fusion_28"]["symbols"])
 
     def test_generate_font_runs_lvgl_converter_and_writes_header(self):
         generator = load_generator()

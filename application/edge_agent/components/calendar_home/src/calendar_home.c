@@ -19,6 +19,7 @@
 #include "freertos/task.h"
 #include "lua_lvgl_runtime.h"
 #include "lvgl.h"
+#include "wifi_manager.h"
 
 static const char *TAG = "calendar_home";
 
@@ -138,6 +139,9 @@ static esp_err_t calendar_home_load_board_display(void)
 static calendar_model_t calendar_home_model_from_snapshot(const calendar_board_snapshot_t *snapshot)
 {
     calendar_model_t model = calendar_model_sample();
+    wifi_manager_status_t wifi_status = {0};
+
+    wifi_manager_get_status(&wifi_status);
 
     model.year = snapshot->local_time.tm_year + 1900;
     model.month = snapshot->local_time.tm_mon + 1;
@@ -149,6 +153,10 @@ static calendar_model_t calendar_home_model_from_snapshot(const calendar_board_s
     model.rtc_fallback_used = snapshot->rtc_fallback_used;
     model.shtc3_available = snapshot->shtc3_available;
     model.indoor_valid = snapshot->indoor_valid;
+    model.wifi_configured = wifi_status.sta_configured;
+    model.wifi_connected = wifi_status.sta_connected;
+    model.battery_valid = false;
+    model.battery_percent = 0;
     model.weekday_text = snapshot->time_valid && snapshot->local_time.tm_wday >= 0 && snapshot->local_time.tm_wday <= 6
                          ? WEEKDAYS[snapshot->local_time.tm_wday]
                          : "待同步";
@@ -162,11 +170,11 @@ static calendar_model_t calendar_home_model_from_snapshot(const calendar_board_s
     } else if (snapshot->rtc_fallback_used) {
         model.day_hint = "RTC fallback";
     } else {
-        model.day_hint = "系统时间";
+        model.day_hint = "时间已同步";
     }
 
     if (snapshot->indoor_valid) {
-        snprintf(s_day_hint, sizeof(s_day_hint), "%s · 室内已更新", model.day_hint);
+        snprintf(s_day_hint, sizeof(s_day_hint), "%s · 数据已更新", model.day_hint);
         model.day_hint = s_day_hint;
     }
 
