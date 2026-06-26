@@ -3,8 +3,8 @@ import unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-BOARD_DATA_SOURCE = ROOT / "application/edge_agent/components/calendar_home/src/calendar_board_data.c"
-BOARD_DATA_HEADER = ROOT / "application/edge_agent/components/calendar_home/src/calendar_board_data.h"
+BOARD_DATA_SOURCE = ROOT / "components/calendar_home/src/calendar_board_data.c"
+BOARD_DATA_HEADER = ROOT / "components/calendar_home/src/calendar_board_data.h"
 
 
 class CalendarBoardDataContractTests(unittest.TestCase):

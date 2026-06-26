@@ -3,8 +3,8 @@ import unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-UI_SOURCE = ROOT / "application/edge_agent/components/calendar_home/src/calendar_ui.c"
-KCONFIG_SOURCE = ROOT / "application/edge_agent/components/calendar_home/Kconfig"
+UI_SOURCE = ROOT / "components/calendar_home/src/calendar_ui.c"
+KCONFIG_SOURCE = ROOT / "components/calendar_home/Kconfig"
 
 
 class CalendarUiLayoutTests(unittest.TestCase):
@@ -66,7 +66,7 @@ class CalendarUiLayoutTests(unittest.TestCase):
 
     def test_assistant_status_card_is_present_on_home_screen(self):
         source = UI_SOURCE.read_text(encoding="utf-8")
-        model_source = (ROOT / "application/edge_agent/components/calendar_home/src/calendar_model.c").read_text(
+        model_source = (ROOT / "components/calendar_home/src/calendar_model.c").read_text(
             encoding="utf-8"
         )
 
@@ -93,7 +93,7 @@ class CalendarUiLayoutTests(unittest.TestCase):
 
     def test_top_status_shows_wifi_battery_and_bottom_status_shows_mic_state(self):
         source = UI_SOURCE.read_text(encoding="utf-8")
-        model_source = (ROOT / "application/edge_agent/components/calendar_home/src/calendar_model.c").read_text(
+        model_source = (ROOT / "components/calendar_home/src/calendar_model.c").read_text(
             encoding="utf-8"
         )
 

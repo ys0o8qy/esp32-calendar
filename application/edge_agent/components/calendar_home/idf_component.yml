@@ -1,9 +1,0 @@
-dependencies:
-  cap_lua:
-    path: ../../../../components/claw_capabilities/cap_lua
-  display_arbiter:
-    path: ../../../../components/common/display_arbiter
-  lua_module_lvgl:
-    path: ../../../../components/lua_modules/lua_module_lvgl
-  wifi_manager:
-    path: ../../../../components/common/wifi_manager

@@ -10,7 +10,6 @@ case "$target" in
     if [[ -f scripts/export-esp-idf.sh ]]; then
       source scripts/export-esp-idf.sh
     fi
-    cd application/edge_agent
     bmgr_generator="managed_components/espressif__esp_board_manager/gen_bmgr_config_codes.py"
     if [[ ! -f "$bmgr_generator" ]]; then
       idf.py reconfigure

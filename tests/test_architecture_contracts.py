@@ -4,23 +4,24 @@ import unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-EDGE_AGENT = ROOT / "application/edge_agent"
-CALENDAR_HOME = EDGE_AGENT / "components/calendar_home"
+FIRMWARE_ROOT = ROOT
+CALENDAR_HOME = ROOT / "components/calendar_home"
 
 
 class ArchitectureContractTests(unittest.TestCase):
     def test_esp_claw_edge_agent_skeleton_is_the_firmware_entry(self):
-        self.assertTrue((EDGE_AGENT / "main/main.c").is_file())
-        self.assertTrue((EDGE_AGENT / "main/idf_component.yml").is_file())
+        self.assertTrue((FIRMWARE_ROOT / "main/main.c").is_file())
+        self.assertTrue((FIRMWARE_ROOT / "main/idf_component.yml").is_file())
+        self.assertTrue((FIRMWARE_ROOT / "CMakeLists.txt").is_file())
         self.assertTrue((ROOT / "components/claw_capabilities").is_dir())
         self.assertTrue((ROOT / "components/claw_modules").is_dir())
         self.assertTrue((ROOT / "components/common").is_dir())
         self.assertTrue((ROOT / "components/lua_modules").is_dir())
-        self.assertFalse((ROOT / "main/main.c").exists())
-        self.assertFalse((ROOT / "CMakeLists.txt").exists())
+        self.assertFalse((ROOT / "application/edge_agent/main/main.c").exists())
+        self.assertFalse((ROOT / "application/edge_agent/CMakeLists.txt").exists())
 
     def test_waveshare_rlcd_board_support_is_the_hardware_baseline(self):
-        board = EDGE_AGENT / "boards/waveshare/waveshare_ESP32_S3_RLCD_4_2"
+        board = FIRMWARE_ROOT / "boards/waveshare/waveshare_ESP32_S3_RLCD_4_2"
         self.assertTrue(board.is_dir())
         self.assertIn("display_lcd", (board / "board_devices.yaml").read_text(encoding="utf-8"))
         self.assertIn("ES8311", (board / "board_devices.yaml").read_text(encoding="utf-8"))
@@ -32,8 +33,8 @@ class ArchitectureContractTests(unittest.TestCase):
 
     def test_calendar_home_is_the_only_application_level_calendar_entry(self):
         header = (CALENDAR_HOME / "include/calendar_home.h").read_text(encoding="utf-8")
-        main_source = (EDGE_AGENT / "main/main.c").read_text(encoding="utf-8")
-        manifest = (EDGE_AGENT / "main/idf_component.yml").read_text(encoding="utf-8")
+        main_source = (FIRMWARE_ROOT / "main/main.c").read_text(encoding="utf-8")
+        manifest = (FIRMWARE_ROOT / "main/idf_component.yml").read_text(encoding="utf-8")
 
         self.assertIn("esp_err_t calendar_home_start(void);", header)
         self.assertIn('#include "calendar_home.h"', main_source)
@@ -99,7 +100,7 @@ class ArchitectureContractTests(unittest.TestCase):
         model_header = (CALENDAR_HOME / "src/calendar_model.h").read_text(encoding="utf-8")
         model_source = (CALENDAR_HOME / "src/calendar_model.c").read_text(encoding="utf-8")
         sim_conf = (ROOT / "sim/lv_conf.h").read_text(encoding="utf-8")
-        defaults = (EDGE_AGENT / "sdkconfig.defaults").read_text(encoding="utf-8")
+        defaults = (FIRMWARE_ROOT / "sdkconfig.defaults").read_text(encoding="utf-8")
 
         self.assertIn("Prefer existing LVGL widgets/components before custom UI components.", agents)
         self.assertIn("lv_calendar_create", ui_source)
@@ -118,9 +119,9 @@ class ArchitectureContractTests(unittest.TestCase):
         dev_verify = (ROOT / "scripts/dev-verify.sh").read_text(encoding="utf-8")
         component_cmake = (CALENDAR_HOME / "CMakeLists.txt").read_text(encoding="utf-8")
 
-        self.assertIn("../application/edge_agent/components/calendar_home/src/calendar_ui.c", sim_cmake)
-        self.assertIn("../application/edge_agent/components/calendar_home/src/calendar_font_digits_48.c", sim_cmake)
-        self.assertIn("../application/edge_agent/components/calendar_home/src/calendar_font_digits_28.c", sim_cmake)
+        self.assertIn("../components/calendar_home/src/calendar_ui.c", sim_cmake)
+        self.assertIn("../components/calendar_home/src/calendar_font_digits_48.c", sim_cmake)
+        self.assertIn("../components/calendar_home/src/calendar_font_digits_28.c", sim_cmake)
         self.assertIn('"src/calendar_font_digits_48.c"', component_cmake)
         self.assertIn('"src/calendar_font_digits_28.c"', component_cmake)
         self.assertIn("calendar_model_from_host_time", sim_source)

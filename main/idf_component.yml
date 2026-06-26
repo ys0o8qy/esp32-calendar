@@ -19,7 +19,7 @@ dependencies:
     version: "3.0.2"
 
   app_claw:
-    path: ../../../components/common/app_claw
+    path: ../components/common/app_claw
 
   app_config:
     path: ../components/app_config
@@ -28,32 +28,32 @@ dependencies:
     path: ../components/calendar_home
 
   captive_dns:
-    path: ../../../components/common/captive_dns
+    path: ../components/common/captive_dns
 
   claw_ramfs:
-    path: ../../../components/claw_modules/claw_ramfs
+    path: ../components/claw_modules/claw_ramfs
 
   claw_utils:
-    path: ../../../components/claw_modules/claw_utils
+    path: ../components/claw_modules/claw_utils
 
   emote:
-    path: ../../../components/common/emote
+    path: ../components/common/emote
     rules:
       - if: $CONFIG{ESP_BOARD_DEV_DISPLAY_LCD_SUPPORT} == True
 
   http_reuse:
-    path: ../../../components/common/http_reuse
+    path: ../components/common/http_reuse
 
   http_server:
     path: ../components/http_server
 
   settings:
-    path: ../../../components/common/settings
+    path: ../components/common/settings
 
   wifi_manager:
-    path: ../../../components/common/wifi_manager
+    path: ../components/common/wifi_manager
 
   esp_video:
-    path: ../../../components/common/esp_video
+    path: ../components/common/esp_video
     matches:
     - if: $CONFIG{ESP_BOARD_DEV_CAMERA_SUPPORT} == True

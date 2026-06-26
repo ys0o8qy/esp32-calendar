@@ -6,7 +6,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 CAP_SYSTEM_SOURCE = ROOT / "components/claw_capabilities/cap_system/src/cap_system.c"
 APP_CLAW_SOURCE = ROOT / "components/common/app_claw/app_claw.c"
 APP_CLAW_HEADER = ROOT / "components/common/app_claw/include/app_claw.h"
-MAIN_SOURCE = ROOT / "application/edge_agent/main/main.c"
+MAIN_SOURCE = ROOT / "main/main.c"
 
 
 class TimeSyncContractTests(unittest.TestCase):
