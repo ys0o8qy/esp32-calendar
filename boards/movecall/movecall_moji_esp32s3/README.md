@@ -1,11 +1,11 @@
-# Movecall CuiCan ESP32-S3
+# Movecall Moji ESP32-S3
 
 ## Hardware Overview
 
 | Feature | Specification |
 |---------|---------------|
 | Chip | ESP32-S3 |
-| Flash | 8MB QIO 80MHz |
+| Flash | 16MB QIO 80MHz |
 | PSRAM | Octal 80MHz |
 | Display | GC9A01 240x240 round SPI |
 | Audio Codec | ES8311 (I2S + I2C) |
@@ -16,32 +16,30 @@
 
 | Function | GPIO |
 |----------|------|
-| I2C SDA | 6 |
-| I2C SCL | 7 |
-| I2S MCLK | 45 |
-| I2S BCLK | 39 |
-| I2S WS | 41 |
-| I2S DOUT | 42 |
-| I2S DIN | 40 |
-| SPI MOSI | 10 |
-| SPI SCLK | 12 |
-| LCD CS | 13 |
-| LCD DC | 14 |
-| LCD RST | 11 |
-| PA Enable | 17 |
-| Backlight | 16 |
+| I2C SDA | 5 |
+| I2C SCL | 4 |
+| I2S MCLK | 6 |
+| I2S BCLK | 14 |
+| I2S WS | 12 |
+| I2S DOUT | 11 |
+| I2S DIN | 13 |
+| SPI MOSI | 17 |
+| SPI SCLK | 16 |
+| LCD CS | 15 |
+| LCD DC | 7 |
+| LCD RST | 18 |
+| PA Enable | 9 |
+| Backlight | 3 |
 | WS2812 | 21 |
 
 ## Build & Flash
 
 ```bash
-cd application/edge_agent
-
 # Set target chip
 idf.py set-target esp32s3
 
 # Generate board configuration
-idf.py bmgr --customer-path ./boards -b movecall_cuican_esp32s3
+idf.py bmgr --customer-path ./boards -b movecall_moji_esp32s3
 
 # Build
 idf.py build
@@ -53,9 +51,17 @@ idf.py -p /dev/cu.usbmodem2101 flash
 idf.py -p /dev/cu.usbmodem2101 monitor
 ```
 
+## Differences from CuiCan
+
+Moji shares the same display and audio codec as CuiCan. Key differences:
+
+- Different GPIO pin assignments
+- Larger flash (16MB vs 8MB)
+- Different SPI data/clock pins
+
 ## Partition Table
 
-Uses `partitions_8MB.csv` for the 8MB flash layout.
+Uses `partitions_16MB.csv` for the 16MB flash layout.
 
 ## Files
 

@@ -7,7 +7,7 @@ prevents structurally valid but visually broken UI from being accepted.
 
 Run the loop after changes to:
 
-- `application/edge_agent/components/calendar_home/` UI, theme, model, board
+- `components/calendar_home/` UI, theme, model, board
   data, or font code
 - `components/common/display_arbiter/` display ownership code
 - `sim/` simulator code

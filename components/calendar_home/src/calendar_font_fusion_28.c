@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 28 px
  * Bpp: 1
- * Opts: --no-compress --no-prefilter --bpp 1 --size 28 --font assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf --symbols 0123456789-%°C --format lvgl -o application/edge_agent/components/calendar_home/src/calendar_font_fusion_28.c --lv-include calendar_font_zh.h --lv-font-name calendar_font_fusion_28 --force-fast-kern-format
+ * Opts: --no-compress --no-prefilter --bpp 1 --size 28 --font assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf --symbols 0123456789-%°C --format lvgl -o components/calendar_home/src/calendar_font_fusion_28.c --lv-include calendar_font_zh.h --lv-font-name calendar_font_fusion_28 --force-fast-kern-format
  ******************************************************************************/
 
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE

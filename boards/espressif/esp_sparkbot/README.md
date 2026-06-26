@@ -56,8 +56,6 @@ I2C scan from the Lua REPL before adjusting `CONFIG_CAMERA_*` and `xclk_freq`.
 ## Build & Flash
 
 ```bash
-cd application/edge_agent
-
 # Set target chip
 idf.py set-target esp32s3
 

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 10 px
  * Bpp: 1
- * Opts: --no-compress --no-prefilter --bpp 1 --size 10 --font assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf --symbols  %+-./0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz°·一三中二五保克六关出办取可同听启周命四回在复完就已年度开待思成或据接数新日时更月未正步温湿用电等系统绪置考语读连配量错闭间音风麦 --format lvgl -o application/edge_agent/components/calendar_home/src/calendar_font_zh.c --lv-include calendar_font_zh.h --lv-font-name calendar_font_zh_16 --force-fast-kern-format
+ * Opts: --no-compress --no-prefilter --bpp 1 --size 10 --font assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf --symbols  %+-./0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz°·一三中二五保克六关出办取可同听启周命四回在复完就已年度开待思成或据接数新日时更月未正步温湿用电等系统绪置考语读连配量错闭间音风麦 --format lvgl -o components/calendar_home/src/calendar_font_zh.c --lv-include calendar_font_zh.h --lv-font-name calendar_font_zh_16 --force-fast-kern-format
  ******************************************************************************/
 
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE

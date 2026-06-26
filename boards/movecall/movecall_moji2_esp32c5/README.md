@@ -37,8 +37,6 @@
 ## Build & Flash
 
 ```bash
-cd application/edge_agent
-
 # Set target chip
 idf.py set-target esp32c5
 

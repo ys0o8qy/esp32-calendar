@@ -39,7 +39,7 @@ because its touch address information is read from the HI8561 controller.
 
 ## Quick Start
 
-Run this command from `application/edge_agent`:
+Run this command from the repository root:
 
 ```powershell
 python managed_components/espressif__esp_board_manager/gen_bmgr_config_codes.py -b ./boards/lilygo/lilygo_t_display_p4_v1 -c ./boards --project-dir .

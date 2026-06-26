@@ -51,7 +51,7 @@ class GenerateZhFontTests(unittest.TestCase):
         symbol_args = [cmd[index + 1] for index, value in enumerate(cmd) if value == "--symbols"]
         self.assertEqual(symbol_args, ["A天"])
         output_arg = cmd[cmd.index("-o") + 1]
-        self.assertEqual(output_arg, "application/edge_agent/components/calendar_home/src/calendar_font_zh.c")
+        self.assertEqual(output_arg, "components/calendar_home/src/calendar_font_zh.c")
         self.assertFalse(pathlib.Path(output_arg).is_absolute())
         self.assertIn("--lv-font-name", cmd)
         self.assertIn("calendar_font_zh_16", cmd)
@@ -138,9 +138,9 @@ class GenerateZhFontTests(unittest.TestCase):
         self.assertEqual(
             outputs,
             [
-                "application/edge_agent/components/calendar_home/src/calendar_font_zh.c",
-                "application/edge_agent/components/calendar_home/src/calendar_font_fusion_48.c",
-                "application/edge_agent/components/calendar_home/src/calendar_font_fusion_28.c",
+                "components/calendar_home/src/calendar_font_zh.c",
+                "components/calendar_home/src/calendar_font_fusion_48.c",
+                "components/calendar_home/src/calendar_font_fusion_28.c",
             ],
         )
         generated_names = [call.args[0]["name"] for call in write_numeric.call_args_list]

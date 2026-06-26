@@ -6,14 +6,14 @@ render QA.
 
 ## Architecture
 
-The firmware project entry is `application/edge_agent`, imported from
-`espressif/esp-claw` and locked to upstream commit
+The firmware project entry is the repository root, flattened from ESP-Claw's
+`application/edge_agent` app and locked to upstream commit
 `ac2a2ec0ca0b23d1270065e563c4ee4253e32e51` for this migration.
 
 The hardware baseline is the ESP-Claw board support:
 
 ```text
-application/edge_agent/boards/waveshare/waveshare_ESP32_S3_RLCD_4_2
+boards/waveshare/waveshare_ESP32_S3_RLCD_4_2
 ```
 
 That board support owns the RLCD custom panel, ES8311/ES7210 audio devices,
@@ -23,7 +23,7 @@ not keep a separate firmware RLCD bridge.
 Calendar-specific code lives in:
 
 ```text
-application/edge_agent/components/calendar_home
+components/calendar_home
 ```
 
 The only app-level calendar entry is:
@@ -84,7 +84,6 @@ Equivalent manual commands:
 
 ```bash
 source ./scripts/export-esp-idf.sh
-cd application/edge_agent
 idf.py reconfigure
 rm -f sdkconfig sdkconfig.old
 idf.py set-target esp32s3
@@ -96,11 +95,27 @@ idf.py set-target esp32s3
 idf.py build
 ```
 
-Flash over USB Serial/JTAG from `application/edge_agent`:
+Flash over USB Serial/JTAG from the repository root:
 
 ```bash
 idf.py -p /dev/cu.usbmodem101 flash monitor
 ```
+
+## FATFS Image Layout
+
+Source content for all FAT partitions lives under a single root tree:
+
+```text
+fatfs_image/
+├── storage/   # storage partition, writable, mounted at /fatfs
+└── system/    # system partition seed, read-only, mounted at /system
+```
+
+Each board can also provide optional board-specific system content under
+`boards/<vendor>/<board>/fatfs_image/`. During the build, `CMakeLists.txt`
+copies the base `fatfs_image/system/` tree, then overlays the selected board's
+`fatfs_image/` tree when present. The selected board path comes from generated
+board-manager code in `components/gen_bmgr_codes/CMakeLists.txt`.
 
 ## Desktop LVGL Simulator
 

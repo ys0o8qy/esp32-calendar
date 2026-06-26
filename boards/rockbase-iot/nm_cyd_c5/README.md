@@ -53,7 +53,6 @@ The board also ships Lua helpers in the ESP-Claw FATFS image for screen display,
 ## Build And Flash
 
 ```powershell
-cd application/edge_agent
 idf.py set-target esp32c5
 idf.py bmgr --customer-path ./boards -b nm_cyd_c5
 idf.py build
@@ -81,7 +80,7 @@ Add support for the RockBase-iot NM-CYD-C5 board.
 
 Description
 
-This board package follows the existing `esp_board_manager` YAML-driven pattern used by other supported ESP-Claw boards and ports the previously validated NM-CYD-C5 basic_demo configuration into `application/edge_agent/boards`.
+This board package follows the existing `esp_board_manager` YAML-driven pattern used by other supported ESP-Claw boards and ports the previously validated NM-CYD-C5 basic_demo configuration into `boards`.
 
 The following hardware definitions were added:
 

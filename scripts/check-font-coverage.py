@@ -7,7 +7,7 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CALENDAR_HOME_SRC = ROOT / "application/edge_agent/components/calendar_home/src"
+CALENDAR_HOME_SRC = ROOT / "components/calendar_home/src"
 FONT_PATH = CALENDAR_HOME_SRC / "calendar_font_zh.c"
 SOURCE_PATHS = [
     CALENDAR_HOME_SRC / "calendar_ui.c",

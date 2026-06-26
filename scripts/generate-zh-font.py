@@ -10,7 +10,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 FONT_SOURCE = ROOT / "assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf"
-CALENDAR_HOME_SRC = ROOT / "application/edge_agent/components/calendar_home/src"
+CALENDAR_HOME_SRC = ROOT / "components/calendar_home/src"
 SOURCE_PATHS = [
     CALENDAR_HOME_SRC / "calendar_model.c",
     CALENDAR_HOME_SRC / "calendar_ui.c",
