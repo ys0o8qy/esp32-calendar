@@ -33,6 +33,9 @@ static calendar_model_t calendar_model_from_host_time(void)
         model.rtc_fallback_used = false;
         model.shtc3_available = false;
         model.indoor_valid = false;
+        model.wifi_configured = true;
+        model.wifi_connected = false;
+        model.battery_valid = false;
         return model;
     }
 
@@ -43,13 +46,17 @@ static calendar_model_t calendar_model_from_host_time(void)
     model.minute = local_time.tm_min;
     model.time_valid = true;
     model.weekday_text = SIM_WEEKDAYS[local_time.tm_wday];
-    model.day_hint = "系统时间 · 室内已更新";
+    model.day_hint = "时间已同步 · 数据已更新";
     model.rtc_available = true;
     model.rtc_fallback_used = false;
     model.shtc3_available = true;
     model.indoor_valid = true;
+    model.wifi_configured = true;
+    model.wifi_connected = true;
+    model.battery_valid = true;
     model.temp_c = 26;
     model.humidity_percent = 46;
+    model.battery_percent = 82;
     model.event_day_count = 1;
     model.event_days[0] = model.day;
     return model;

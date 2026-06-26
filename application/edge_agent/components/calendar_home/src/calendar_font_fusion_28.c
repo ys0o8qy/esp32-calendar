@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 28 px
  * Bpp: 1
- * Opts: --no-compress --no-prefilter --bpp 1 --size 28 --font assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf --symbols 0123456789-°C --format lvgl -o application/edge_agent/components/calendar_home/src/calendar_font_fusion_28.c --lv-include calendar_font_zh.h --lv-font-name calendar_font_fusion_28 --force-fast-kern-format
+ * Opts: --no-compress --no-prefilter --bpp 1 --size 28 --font assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf --symbols 0123456789-%°C --format lvgl -o application/edge_agent/components/calendar_home/src/calendar_font_fusion_28.c --lv-include calendar_font_zh.h --lv-font-name calendar_font_fusion_28 --force-fast-kern-format
  ******************************************************************************/
 
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
@@ -22,6 +22,12 @@
 
 /*Store the image of the glyphs*/
 static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
+    /* U+0025 "%" */
+    0xe0, 0xfc, 0x1f, 0x83, 0x80, 0x70, 0xe, 0x0,
+    0x0, 0xc0, 0x18, 0x3, 0x0, 0x60, 0xc, 0x0,
+    0x1, 0xc0, 0x38, 0x7, 0x7, 0x0, 0xe0, 0x1c,
+    0x1f, 0x83, 0xf0, 0x70,
+
     /* U+002D "-" */
     0xff, 0xff, 0xff, 0xff, 0x80,
 
@@ -101,10 +107,10 @@ static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
 
 static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
     {.bitmap_index = 0, .adv_w = 0, .box_w = 0, .box_h = 0, .ofs_x = 0, .ofs_y = 0} /* id = 0 reserved */,
-    {.bitmap_index = 0, .adv_w = 224, .box_w = 11, .box_h = 3, .ofs_x = 0, .ofs_y = 6},
-    {.bitmap_index = 5, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
-    {.bitmap_index = 33, .adv_w = 224, .box_w = 8, .box_h = 20, .ofs_x = 3, .ofs_y = 0},
-    {.bitmap_index = 53, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
+    {.bitmap_index = 0, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
+    {.bitmap_index = 28, .adv_w = 224, .box_w = 11, .box_h = 3, .ofs_x = 0, .ofs_y = 6},
+    {.bitmap_index = 33, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
+    {.bitmap_index = 61, .adv_w = 224, .box_w = 8, .box_h = 20, .ofs_x = 3, .ofs_y = 0},
     {.bitmap_index = 81, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
     {.bitmap_index = 109, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
     {.bitmap_index = 137, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
@@ -113,7 +119,8 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
     {.bitmap_index = 221, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
     {.bitmap_index = 249, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
     {.bitmap_index = 277, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
-    {.bitmap_index = 305, .adv_w = 224, .box_w = 8, .box_h = 8, .ofs_x = 3, .ofs_y = 14}
+    {.bitmap_index = 305, .adv_w = 224, .box_w = 11, .box_h = 20, .ofs_x = 0, .ofs_y = 0},
+    {.bitmap_index = 333, .adv_w = 224, .box_w = 8, .box_h = 8, .ofs_x = 3, .ofs_y = 14}
 };
 
 /*---------------------
@@ -121,16 +128,16 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
  *--------------------*/
 
 static const uint16_t unicode_list_0[] = {
-    0x0, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9,
-    0xa, 0xb, 0xc, 0x16, 0x83
+    0x0, 0x8, 0xb, 0xc, 0xd, 0xe, 0xf, 0x10,
+    0x11, 0x12, 0x13, 0x14, 0x1e, 0x8b
 };
 
 /*Collect the unicode lists and glyph_id offsets*/
 static const lv_font_fmt_txt_cmap_t cmaps[] =
 {
     {
-        .range_start = 45, .range_length = 132, .glyph_id_start = 1,
-        .unicode_list = unicode_list_0, .glyph_id_ofs_list = NULL, .list_length = 13, .type = LV_FONT_FMT_TXT_CMAP_SPARSE_TINY
+        .range_start = 37, .range_length = 140, .glyph_id_start = 1,
+        .unicode_list = unicode_list_0, .glyph_id_ofs_list = NULL, .list_length = 14, .type = LV_FONT_FMT_TXT_CMAP_SPARSE_TINY
     }
 };
 

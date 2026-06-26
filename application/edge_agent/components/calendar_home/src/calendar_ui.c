@@ -113,28 +113,54 @@ static void add_status_bar(lv_obj_t *parent, const calendar_model_t *model)
     lv_obj_add_style(label, &g_theme.muted, 0);
 }
 
-static void add_indoor_panel(lv_obj_t *parent, const calendar_model_t *model)
+static void add_top_status(lv_obj_t *parent, const calendar_model_t *model)
 {
     char text[32];
-    lv_obj_t *panel = make_panel(parent, 18, 181, 154, 62);
 
-    make_label_box(panel, "室内", 8, 5, 48, 20);
-    if (!model->indoor_valid) {
-        lv_obj_t *waiting = make_label_box(panel, model->shtc3_available ? "待读取" : "未连接", 58, 5, 82, 20);
-        lv_obj_add_style(waiting, &g_theme.muted, 0);
-        make_label_box(panel, "--°C", 8, 25, 64, 30);
-        lv_obj_t *humidity = make_label_box(panel, "湿度 --%", 82, 30, 62, 20);
-        lv_obj_add_style(humidity, &g_theme.muted, 0);
-        return;
+    snprintf(
+        text,
+        sizeof(text),
+        "WiFi %s",
+        model->wifi_connected ? "已连接" : (model->wifi_configured ? "未连接" : "未配置"));
+    lv_obj_t *wifi = make_label_box(parent, text, 10, 8, 150, 22);
+    lv_obj_add_style(wifi, &g_theme.muted, 0);
+
+    const char *battery_format = model->battery_valid ? "电量 %d%%" : "电量 --";
+    if (model->battery_valid) {
+        snprintf(text, sizeof(text), battery_format, model->battery_percent);
+    } else {
+        snprintf(text, sizeof(text), "%s", battery_format);
+    }
+    lv_obj_t *battery = make_label_box(parent, text, 288, 8, 92, 22);
+    lv_obj_add_style(battery, &g_theme.muted, 0);
+}
+
+static void add_sensor_tile(lv_obj_t *parent, int x, int y, const char *label_text, const char *value_text)
+{
+    lv_obj_t *panel = make_panel(parent, x, y, 76, 76);
+
+    lv_obj_t *label = make_label_box(panel, label_text, 8, 7, 60, 18);
+    lv_obj_add_style(label, &g_theme.muted, 0);
+
+    lv_obj_t *value = make_label_box(panel, value_text, 8, 34, 60, 30);
+    lv_obj_set_style_text_font(value, &calendar_font_fusion_28, 0);
+}
+
+static void add_sensor_tiles(lv_obj_t *parent, const calendar_model_t *model)
+{
+    char temp_text[16];
+    char humidity_text[16];
+
+    if (model->indoor_valid) {
+        snprintf(temp_text, sizeof(temp_text), "%d°C", model->temp_c);
+        snprintf(humidity_text, sizeof(humidity_text), "%d%%", model->humidity_percent);
+    } else {
+        snprintf(temp_text, sizeof(temp_text), "--°C");
+        snprintf(humidity_text, sizeof(humidity_text), "--%%");
     }
 
-    snprintf(text, sizeof(text), "%d°C", model->temp_c);
-    lv_obj_t *temp = make_label_box(panel, text, 8, 24, 66, 32);
-    lv_obj_set_style_text_font(temp, &calendar_font_fusion_28, 0);
-
-    snprintf(text, sizeof(text), "湿度 %d%%", model->humidity_percent);
-    lv_obj_t *humidity = make_label_box(panel, text, 82, 30, 62, 20);
-    lv_obj_add_style(humidity, &g_theme.muted, 0);
+    add_sensor_tile(parent, 18, 172, "温度", temp_text);
+    add_sensor_tile(parent, 102, 172, "湿度", humidity_text);
 }
 
 static void add_month_calendar(lv_obj_t *parent, const calendar_model_t *model)
@@ -174,10 +200,7 @@ void calendar_ui_update(calendar_ui_t *ui, const calendar_model_t *model)
     char text[96];
 
     lv_obj_clean(ui->screen);
-
-    snprintf(text, sizeof(text), "%s%s", model->rtc_fallback_used ? "RTC保时" : "系统时间", model->time_valid ? "" : "待同步");
-    lv_obj_t *status = make_label_box(ui->screen, text, 10, 8, 158, 22);
-    lv_obj_add_style(status, &g_theme.muted, 0);
+    add_top_status(ui->screen, model);
 
     if (model->time_valid) {
         snprintf(text, sizeof(text), "%s  %d月%d日", model->weekday_text, model->month, model->day);
@@ -193,7 +216,7 @@ void calendar_ui_update(calendar_ui_t *ui, const calendar_model_t *model)
     lv_obj_t *hint = make_label_box(ui->screen, model->day_hint, 21, 139, 154, 22);
     lv_obj_add_style(hint, &g_theme.muted, 0);
 
-    add_indoor_panel(ui->screen, model);
+    add_sensor_tiles(ui->screen, model);
     add_month_calendar(ui->screen, model);
     add_status_bar(ui->screen, model);
 }
